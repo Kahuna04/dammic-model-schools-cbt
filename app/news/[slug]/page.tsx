@@ -13,10 +13,11 @@ const POST_QUERY = groq`*[_type == "post" && slug.current == $slug][0]{
   body
 }`;
 
-export default async function Page({ params }: { params: { slug: string } }) {
+export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   let post: any = null;
   try {
-    post = await client.fetch(POST_QUERY, { slug: params.slug });
+    post = await client.fetch(POST_QUERY, { slug });
   } catch (e) {}
 
   if (!post) {
