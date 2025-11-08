@@ -4,6 +4,7 @@ import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import JsonLd from "./JsonLd";
+import Providers from "./providers";
 
 export const metadata: Metadata = {
   title: "Dammic Model Schools | Solid and steady steps to greatness",
@@ -25,10 +26,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <JsonLd />
       </head>
       <body>
-        <NavBar />
-        <main className="container-responsive py-4 sm:py-6 md:py-8">{children}</main>
-        <Footer />
-        <WhatsAppButton />
+        <Providers>
+          <NavBar />
+          <main className="container-responsive py-4 sm:py-6 md:py-8">{children}</main>
+          <Footer />
+          <WhatsAppButton />
+        </Providers>
       </body>
     </html>
   );

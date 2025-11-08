@@ -42,3 +42,12 @@ body {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+.animate-scroll-rtl {
+  animation: scrollRightToLeft 30s linear infinite;
+}
+
+@keyframes scrollRightToLeft {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}

@@ -1,0 +1,148 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  STAFF
+  STUDENT
+}
+
+enum ClassLevel {
+  JSS1
+  JSS2
+  JSS3
+  SSS1
+  SSS2
+  SSS3
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  ESSAY
+}
+
+enum ExamStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum SubmissionStatus {
+  IN_PROGRESS
+  SUBMITTED
+  GRADED
+}
+
+model User {
+  id            String      @id @default(cuid())
+  email         String?     @unique
+  password      String
+  name          String
+  role          Role        @default(STUDENT)
+  studentId     String?     @unique
+  classLevel    ClassLevel?
+  permissions   Json?       // For staff permissions: {can_create_exam, can_grade, can_manage_students}
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  
+  // Relations
+  createdExams  Exam[]      @relation("ExamCreator")
+  submissions   Submission[]
+  
+  @@index([email])
+  @@index([role])
+  @@index([classLevel])
+}
+
+model Exam {
+  id            String        @id @default(cuid())
+  title         String
+  description   String?
+  duration      Int           // Duration in minutes
+  totalMarks    Int
+  passingMarks  Int
+  status        ExamStatus    @default(DRAFT)
+  startTime     DateTime?
+  endTime       DateTime?
+  assignedTo    Json?         // Array of ClassLevel enums - which classes can see this exam
+  createdById   String
+  createdBy     User          @relation("ExamCreator", fields: [createdById], references: [id])
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  // Relations
+  questions     Question[]
+  submissions   Submission[]
+  
+  @@index([status])
+  @@index([createdById])
+}
+
+model Question {
+  id            String        @id @default(cuid())
+  examId        String
+  exam          Exam          @relation(fields: [examId], references: [id], onDelete: Cascade)
+  type          QuestionType
+  question      String
+  options       Json?         // Array of options for multiple choice
+  correctAnswer String        // Stores the correct answer
+  marks         Int
+  order         Int           // Question order in exam
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  // Relations
+  answers       Answer[]
+  
+  @@index([examId])
+}
+
+model Submission {
+  id            String            @id @default(cuid())
+  examId        String
+  exam          Exam              @relation(fields: [examId], references: [id], onDelete: Cascade)
+  studentId     String
+  student       User              @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  status        SubmissionStatus  @default(IN_PROGRESS)
+  startedAt     DateTime          @default(now())
+  submittedAt   DateTime?
+  totalScore    Int?              // Calculated after grading
+  percentage    Float?            // Calculated percentage
+  passed        Boolean?          // Whether student passed
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  
+  // Relations
+  answers       Answer[]
+  
+  @@unique([examId, studentId])
+  @@index([studentId])
+  @@index([examId])
+}
+
+model Answer {
+  id            String      @id @default(cuid())
+  submissionId  String
+  submission    Submission  @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  questionId    String
+  question      Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answer        String      // Student's answer
+  isCorrect     Boolean?    // For auto-graded questions
+  marks         Int?        // Marks awarded (for essay questions, graded by staff)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  
+  @@unique([submissionId, questionId])
+  @@index([submissionId])
+  @@index([questionId])
+}

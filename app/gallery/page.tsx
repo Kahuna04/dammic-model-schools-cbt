@@ -32,7 +32,7 @@ async function GalleryImages() {
           Array.from({ length: 9 }).map((_, i) => (
             <Image
               key={i}
-              src={`https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?auto=format&fit=crop&w=800&q=60&sig=${i}`}
+              src={`https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?w=800&h=600&auto=format&q=60&sig=${i}`}
               alt="School"
               width={800}
               height={600}
