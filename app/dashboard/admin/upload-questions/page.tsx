@@ -86,8 +86,8 @@ export default function UploadQuestionsPage() {
       setDuration('');
       setPassingPercentage('50');
       
-      // Redirect to exams page
-      router.push('/dashboard/admin');
+      // Redirect to appropriate dashboard
+      router.push(session?.user.role === 'STAFF' ? '/dashboard/staff' : '/dashboard/admin');
     } catch (error) {
       alert(error instanceof Error ? error.message : 'Failed to upload questions');
     } finally {
@@ -104,7 +104,7 @@ export default function UploadQuestionsPage() {
             <p className="text-sm opacity-90">Import exam questions from a Word document</p>
           </div>
           <Link
-            href="/dashboard/admin"
+            href={session?.user.role === 'STAFF' ? '/dashboard/staff' : '/dashboard/admin'}
             className="bg-white text-[#4B5320] px-4 py-2 rounded-md hover:bg-gray-100 transition-colors"
           >
             Back to Dashboard
@@ -279,7 +279,7 @@ export default function UploadQuestionsPage() {
                 {isSubmitting ? 'Uploading...' : 'Upload and Create Exam'}
               </button>
               <Link
-                href="/dashboard/admin"
+                href={session?.user.role === 'STAFF' ? '/dashboard/staff' : '/dashboard/admin'}
                 className="flex-1 py-3 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors font-semibold text-center"
               >
                 Cancel

@@ -70,25 +70,37 @@ export default function StaffDashboard() {
         fetch('/api/staff/submissions/pending'),
       ]);
 
+      let examsData: Exam[] = [];
+      let submissionsData: Submission[] = [];
+
       if (userRes.ok) {
         const userData: User = await userRes.json();
         setPermissions(userData.permissions || {});
+      } else if (userRes.status === 401) {
+        router.push('/login');
+        return;
       }
 
       if (examsRes.ok) {
-        const examsData = await examsRes.json();
+        examsData = await examsRes.json();
         setExams(examsData);
+      } else if (examsRes.status === 401) {
+        router.push('/login');
+        return;
       }
 
       if (submissionsRes.ok) {
-        const submissionsData = await submissionsRes.json();
+        submissionsData = await submissionsRes.json();
         setPendingSubmissions(submissionsData);
+      } else if (submissionsRes.status === 401) {
+        router.push('/login');
+        return;
       }
 
       setStats({
-        exams: exams.length,
-        submissions: pendingSubmissions.length + 100, // Example
-        pendingGrading: pendingSubmissions.length,
+        exams: examsData.length,
+        submissions: submissionsData.length,
+        pendingGrading: submissionsData.length,
       });
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
@@ -183,7 +195,7 @@ export default function StaffDashboard() {
         {/* Quick Actions */}
         <div className="mb-8">
           <h2 className="text-xl sm:text-2xl font-bold text-[#4B5320] mb-4">Quick Actions</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {permissions.can_create_exam && (
               <Link
                 href="/dashboard/admin/exams/create"
@@ -192,6 +204,17 @@ export default function StaffDashboard() {
                 <div className="text-4xl mb-2">➕</div>
                 <h3 className="font-semibold text-[#4B5320]">Create Exam</h3>
                 <p className="text-sm text-gray-600">Create a new exam</p>
+              </Link>
+            )}
+
+            {permissions.can_create_exam && (
+              <Link
+                href="/dashboard/admin/upload-questions"
+                className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow text-center"
+              >
+                <div className="text-4xl mb-2">📄</div>
+                <h3 className="font-semibold text-[#4B5320]">Upload Questions</h3>
+                <p className="text-sm text-gray-600">Import from Word</p>
               </Link>
             )}
 

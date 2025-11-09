@@ -26,7 +26,25 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session || (session.user.role !== 'ADMIN' && session.user.role !== 'STAFF')) {
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check if user is ADMIN or STAFF with exam creation permission
+    if (session.user.role === 'STAFF') {
+      const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { permissions: true },
+      });
+      
+      const permissions = user?.permissions as any;
+      if (!permissions?.can_create_exam) {
+        return NextResponse.json(
+          { error: 'You do not have permission to upload questions' },
+          { status: 403 }
+        );
+      }
+    } else if (session.user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

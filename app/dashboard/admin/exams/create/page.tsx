@@ -41,8 +41,13 @@ export default function CreateExamPage() {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
 
-  if (status === 'unauthenticated' || session?.user.role !== 'ADMIN') {
+  if (status === 'unauthenticated') {
     router.push('/login');
+    return null;
+  }
+
+  if (session?.user.role !== 'ADMIN' && session?.user.role !== 'STAFF') {
+    router.push('/dashboard');
     return null;
   }
 
@@ -137,7 +142,7 @@ export default function CreateExamPage() {
         <div className="container mx-auto flex justify-between items-center">
           <h1 className="text-2xl font-bold">Create Exam</h1>
           <Link
-            href="/dashboard/admin"
+            href={session?.user.role === 'STAFF' ? '/dashboard/staff' : '/dashboard/admin'}
             className="bg-white text-[#4B5320] px-4 py-2 rounded-md hover:bg-gray-100"
           >
             Back to Dashboard
