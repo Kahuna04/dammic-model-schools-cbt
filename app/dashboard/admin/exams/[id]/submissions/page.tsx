@@ -205,7 +205,7 @@ export default function ExamSubmissionsPage() {
 
   // Get unique class levels
   const classLevels = Array.from(
-    new Set(submissions.map(s => s.student.classLevel).filter(Boolean))
+    new Set(submissions.map(s => s.student.classLevel).filter((level): level is string => level !== null))
   ).sort();
 
   // Filter and search submissions
