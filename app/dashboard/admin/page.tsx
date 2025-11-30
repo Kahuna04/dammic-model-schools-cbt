@@ -231,6 +231,12 @@ export default async function AdminDashboard() {
                           >
                             Assign
                           </Link>
+                          <Link
+                            href={`/dashboard/admin/exams/${exam.id}/submissions`}
+                            className="text-orange-600 hover:underline text-sm"
+                          >
+                            Submissions
+                          </Link>
                           <a
                             href={`/api/admin/exams/${exam.id}/results`}
                             className="text-green-600 hover:underline text-sm"

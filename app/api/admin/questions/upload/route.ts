@@ -5,19 +5,17 @@ import { prisma } from '@/lib/prisma';
 import mammoth from 'mammoth';
 
 /**
- * Expected Word document format:
+ * Expected Word document format (supports two formats):
  * 
+ * Format 1 (Multi-line):
  * 1. [Question text]
  * A. [Option A]
  * B. [Option B]
  * C. [Option C]*
  * D. [Option D]
  * 
- * 2. [Question text]
- * A. [Option A]*
- * B. [Option B]
- * C. [Option C]
- * D. [Option D]
+ * Format 2 (Single-line):
+ * (1) What IDE is this? (a) Cursor* (b) Warp (c) None of the above
  * 
  * Note: The correct answer is marked with an asterisk (*)
  */
@@ -165,10 +163,10 @@ function parseQuestions(text: string, marksPerQuestion: number): any[] {
     
     if (!line) continue;
 
-    // Check if line starts with a number (new question)
-    const questionMatch = line.match(/^(\d+)[\.\)]\s+(.+)/);
+    // Check for single-line format: (1) Question text (a) Option* (b) Option (c) Option
+    const singleLineMatch = line.match(/^\((\d+)\)\s+(.+)/);
     
-    if (questionMatch) {
+    if (singleLineMatch) {
       // Save previous question if exists
       if (currentQuestion && currentOptions.length > 0) {
         currentQuestion.options = currentOptions;
@@ -178,26 +176,80 @@ function parseQuestions(text: string, marksPerQuestion: number): any[] {
         questions.push(currentQuestion);
       }
 
-      // Start new question
-      const questionText = questionMatch[2].replace(/\*$/, '').trim();
-      currentQuestion = {
-        type: 'MULTIPLE_CHOICE',
-        question: questionText,
-        marks: marksPerQuestion,
-      };
-      currentOptions = [];
-      correctAnswerIndex = -1;
-    }
-    // Check for options (A., B., C., D. or A), B), C), D))
-    else if (/^[A-D][\.\)]\s+/i.test(line)) {
-      const hasAsterisk = line.includes('*');
-      const optionText = line.replace(/^[A-D][\.\)]\s+/i, '').replace(/\*+/g, '').trim();
+      // Parse single-line format
+      const restOfLine = singleLineMatch[2];
       
-      if (hasAsterisk) {
-        correctAnswerIndex = currentOptions.length;
+      // Extract question text and options
+      // Pattern: Question text (a) Option* (b) Option (c) Option
+      // Match pattern: (a) followed by text (possibly with *) until next (a-d) or end
+      const optionPattern = /\(([a-d])\)\s+([^(]+?)(?=\s*\([a-d]\)|$)/gi;
+      const matches = Array.from(restOfLine.matchAll(optionPattern));
+      
+      if (matches.length > 0) {
+        // Extract question text (everything before the first option)
+        const firstOptionIndex = restOfLine.indexOf(matches[0][0]);
+        const questionText = restOfLine.substring(0, firstOptionIndex).trim();
+        
+        // Extract options
+        currentOptions = [];
+        correctAnswerIndex = -1;
+        
+        for (let j = 0; j < matches.length; j++) {
+          const match = matches[j];
+          let optionText = match[2].trim();
+          
+          // Check if this option has an asterisk
+          if (optionText.includes('*')) {
+            correctAnswerIndex = j;
+            // Remove asterisk from option text
+            optionText = optionText.replace(/\*+/g, '').trim();
+          }
+          
+          currentOptions.push(optionText);
+        }
+        
+        currentQuestion = {
+          type: 'MULTIPLE_CHOICE',
+          question: questionText,
+          marks: marksPerQuestion,
+        };
       }
+    }
+    // Check if line starts with a number (new question) - multi-line format
+    else {
+      const questionMatch = line.match(/^(\d+)[\.\)]\s+(.+)/);
       
-      currentOptions.push(optionText);
+      if (questionMatch) {
+        // Save previous question if exists
+        if (currentQuestion && currentOptions.length > 0) {
+          currentQuestion.options = currentOptions;
+          if (correctAnswerIndex >= 0 && correctAnswerIndex < currentOptions.length) {
+            currentQuestion.correctAnswer = currentOptions[correctAnswerIndex];
+          }
+          questions.push(currentQuestion);
+        }
+
+        // Start new question
+        const questionText = questionMatch[2].replace(/\*$/, '').trim();
+        currentQuestion = {
+          type: 'MULTIPLE_CHOICE',
+          question: questionText,
+          marks: marksPerQuestion,
+        };
+        currentOptions = [];
+        correctAnswerIndex = -1;
+      }
+      // Check for options (A., B., C., D. or A), B), C), D)) - multi-line format
+      else if (/^[A-D][\.\)]\s+/i.test(line)) {
+        const hasAsterisk = line.includes('*');
+        const optionText = line.replace(/^[A-D][\.\)]\s+/i, '').replace(/\*+/g, '').trim();
+        
+        if (hasAsterisk) {
+          correctAnswerIndex = currentOptions.length;
+        }
+        
+        currentOptions.push(optionText);
+      }
     }
   }
 

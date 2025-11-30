@@ -220,12 +220,20 @@ export default function AdminExamsPage() {
                       {exam.createdBy.name}
                     </td>
                     <td className="px-4 py-3">
-                      <Link
-                        href={`/dashboard/admin/exams/${exam.id}`}
-                        className="text-[#4B5320] hover:underline text-sm font-medium"
-                      >
-                        View Details
-                      </Link>
+                      <div className="flex gap-2 flex-wrap">
+                        <Link
+                          href={`/dashboard/admin/exams/${exam.id}`}
+                          className="text-[#4B5320] hover:underline text-sm font-medium"
+                        >
+                          View
+                        </Link>
+                        <Link
+                          href={`/dashboard/admin/exams/${exam.id}/submissions`}
+                          className="text-orange-600 hover:underline text-sm font-medium"
+                        >
+                          Submissions
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 ))}
