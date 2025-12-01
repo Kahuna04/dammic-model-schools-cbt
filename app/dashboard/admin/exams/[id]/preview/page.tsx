@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 interface Question {
   id: string;
@@ -35,32 +36,142 @@ export default function ExamPreviewPage() {
   const [exam, setExam] = useState<Exam | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [deletingQuestionId, setDeletingQuestionId] = useState<string | null>(null);
+  const [deletingAll, setDeletingAll] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    questionId: string | null;
+    questionText: string;
+    deleteAll: boolean;
+  }>({
+    isOpen: false,
+    questionId: null,
+    questionText: '',
+    deleteAll: false,
+  });
 
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/login');
-    } else if (session?.user.role !== 'ADMIN') {
+    } else if (session?.user.role !== 'ADMIN' && session?.user.role !== 'STAFF') {
       router.push('/dashboard');
     }
   }, [status, session, router]);
 
   useEffect(() => {
-    if (examId && session?.user.role === 'ADMIN') {
+    if (examId && (session?.user.role === 'ADMIN' || session?.user.role === 'STAFF')) {
       fetchExam();
     }
   }, [examId, session]);
 
   const fetchExam = async () => {
     try {
-      const response = await fetch(`/api/admin/exams/${examId}`);
+      // Use appropriate API endpoint based on role
+      const apiUrl = session?.user.role === 'STAFF' 
+        ? `/api/staff/exams/${examId}`
+        : `/api/admin/exams/${examId}`;
+      
+      const response = await fetch(apiUrl);
       if (response.ok) {
         const data = await response.json();
         setExam(data);
+        // Adjust current question index if it's out of bounds after deletion
+        if (data.questions.length > 0 && currentQuestionIndex >= data.questions.length) {
+          setCurrentQuestionIndex(data.questions.length - 1);
+        } else if (data.questions.length === 0) {
+          setCurrentQuestionIndex(0);
+        }
       }
     } catch (error) {
       console.error('Failed to fetch exam:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteClick = (questionId: string, questionText: string) => {
+    setConfirmDialog({
+      isOpen: true,
+      questionId,
+      questionText,
+      deleteAll: false,
+    });
+  };
+
+  const handleDeleteAllClick = () => {
+    setConfirmDialog({
+      isOpen: true,
+      questionId: null,
+      questionText: '',
+      deleteAll: true,
+    });
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (confirmDialog.deleteAll) {
+      // Delete all questions
+      setDeletingAll(true);
+      try {
+        const apiUrl = session?.user.role === 'STAFF' 
+          ? `/api/admin/exams/${examId}/questions`
+          : `/api/admin/exams/${examId}/questions`;
+        
+        const response = await fetch(apiUrl, {
+          method: 'DELETE',
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          // Refresh exam data
+          await fetchExam();
+          alert(`${result.message}. Exam marks have been reset to zero.`);
+        } else {
+          const error = await response.json();
+          alert(error.error || 'Failed to delete all questions');
+        }
+      } catch (error) {
+        console.error('Error deleting all questions:', error);
+        alert('Failed to delete all questions. Please try again.');
+      } finally {
+        setDeletingAll(false);
+        setConfirmDialog({
+          isOpen: false,
+          questionId: null,
+          questionText: '',
+          deleteAll: false,
+        });
+      }
+    } else {
+      // Delete single question
+      if (!confirmDialog.questionId) return;
+
+      setDeletingQuestionId(confirmDialog.questionId);
+      try {
+        const response = await fetch(`/api/admin/questions/${confirmDialog.questionId}`, {
+          method: 'DELETE',
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          // Refresh exam data to get updated questions and marks
+          await fetchExam();
+          alert('Question deleted successfully. Exam marks have been updated.');
+        } else {
+          const error = await response.json();
+          alert(error.error || 'Failed to delete question');
+        }
+      } catch (error) {
+        console.error('Error deleting question:', error);
+        alert('Failed to delete question. Please try again.');
+      } finally {
+        setDeletingQuestionId(null);
+        setConfirmDialog({
+          isOpen: false,
+          questionId: null,
+          questionText: '',
+          deleteAll: false,
+        });
+      }
     }
   };
 
@@ -87,6 +198,31 @@ export default function ExamPreviewPage() {
 
   const currentQuestion = exam.questions[currentQuestionIndex];
 
+  // If no questions, show empty state
+  if (!currentQuestion || exam.questions.length === 0) {
+    return (
+      <div className="min-h-screen bg-[#F4F1E8]">
+        <header className="bg-[#4B5320] text-white p-4 shadow-md sticky top-0 z-10">
+          <div className="container mx-auto flex justify-between items-center">
+            <h1 className="text-xl font-bold">{exam.title} - Preview</h1>
+            <Link
+              href={session?.user.role === 'STAFF' ? '/dashboard/staff' : `/dashboard/admin/exams`}
+              className="bg-white text-[#4B5320] px-4 py-2 rounded-md hover:bg-gray-100 transition-colors"
+            >
+              Back to {session?.user.role === 'STAFF' ? 'Dashboard' : 'Exams'}
+            </Link>
+          </div>
+        </header>
+        <main className="container mx-auto p-6 max-w-4xl">
+          <div className="bg-white rounded-lg shadow-lg p-8 text-center">
+            <h2 className="text-xl font-bold text-gray-700 mb-2">No Questions</h2>
+            <p className="text-gray-600">This exam has no questions yet.</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#F4F1E8]">
       {/* Header */}
@@ -99,6 +235,16 @@ export default function ExamPreviewPage() {
             </p>
           </div>
           <div className="flex gap-2">
+            {exam.questions.length > 0 && (
+              <button
+                onClick={handleDeleteAllClick}
+                disabled={deletingAll}
+                className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                title="Delete all questions from this exam"
+              >
+                {deletingAll ? 'Deleting...' : 'Delete All Questions'}
+              </button>
+            )}
             <button
               onClick={() => window.print()}
               className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
@@ -106,10 +252,10 @@ export default function ExamPreviewPage() {
               Print
             </button>
             <Link
-              href={`/dashboard/admin/exams/${exam.id}`}
+              href={session?.user.role === 'STAFF' ? '/dashboard/staff' : `/dashboard/admin/exams`}
               className="bg-white text-[#4B5320] px-4 py-2 rounded-md hover:bg-gray-100 transition-colors"
             >
-              Back to Exam
+              Back to {session?.user.role === 'STAFF' ? 'Dashboard' : 'Exams'}
             </Link>
           </div>
         </div>
@@ -152,9 +298,19 @@ export default function ExamPreviewPage() {
               <h2 className="text-xl font-semibold text-[#4B5320] flex-1">
                 {currentQuestion.question}
               </h2>
-              <span className="text-sm bg-[#4B5320] text-white px-3 py-1 rounded-full ml-4">
-                {currentQuestion.marks} marks
-              </span>
+              <div className="flex items-center gap-2 ml-4">
+                <span className="text-sm bg-[#4B5320] text-white px-3 py-1 rounded-full">
+                  {currentQuestion.marks} marks
+                </span>
+                <button
+                  onClick={() => handleDeleteClick(currentQuestion.id, currentQuestion.question)}
+                  disabled={deletingQuestionId === currentQuestion.id}
+                  className="text-red-600 hover:text-red-800 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium px-3 py-1 border border-red-300 rounded-md hover:bg-red-50 transition-colors"
+                  title="Delete question"
+                >
+                  {deletingQuestionId === currentQuestion.id ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -294,6 +450,19 @@ export default function ExamPreviewPage() {
           ))}
         </div>
       </main>
+
+      {/* Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.deleteAll ? "Delete All Questions" : "Delete Question"}
+        message={confirmDialog.deleteAll 
+          ? `Are you sure you want to delete ALL ${exam.questions.length} question(s) from this exam? This will reset the exam's total marks to zero and affect all existing submissions. This action cannot be undone.`
+          : `Are you sure you want to delete this question? This will also update the exam's total marks. This action cannot be undone.\n\n"${confirmDialog.questionText.substring(0, 100)}${confirmDialog.questionText.length > 100 ? '...' : ''}"`}
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setConfirmDialog({ ...confirmDialog, isOpen: false, deleteAll: false })}
+        isDangerous={true}
+        confirmText="Delete"
+      />
     </div>
   );
 }

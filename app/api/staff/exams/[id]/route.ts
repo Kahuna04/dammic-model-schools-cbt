@@ -11,36 +11,16 @@ export async function GET(
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session) {
+    if (!session || session.user.role !== 'STAFF') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Allow ADMIN or STAFF with can_create_exam permission
-    if (session.user.role === 'STAFF') {
-      const user = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: { permissions: true },
-      });
-      
-      const permissions = user?.permissions as any;
-      if (!permissions?.can_create_exam) {
-        return NextResponse.json(
-          { error: 'You do not have permission to view this exam' },
-          { status: 403 }
-        );
-      }
-    } else if (session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Staff can only access their own exams
-    const whereClause: any = { id: params.id };
-    if (session.user.role === 'STAFF') {
-      whereClause.createdById = session.user.id;
-    }
-
+    // Get exam with questions, but only if created by this staff member
     const exam = await prisma.exam.findFirst({
-      where: whereClause,
+      where: {
+        id: params.id,
+        createdById: session.user.id, // Only allow access to own exams
+      },
       include: {
         questions: {
           orderBy: { order: 'asc' },
@@ -64,3 +44,4 @@ export async function GET(
     return NextResponse.json({ error: 'Failed to fetch exam' }, { status: 500 });
   }
 }
+
