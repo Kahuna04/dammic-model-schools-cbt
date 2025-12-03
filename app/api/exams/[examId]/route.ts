@@ -52,6 +52,29 @@ export async function GET(
       return NextResponse.json({ error: 'Exam has ended' }, { status: 403 });
     }
 
+    // Check if exam is assigned to student's class (for students only)
+    if (session.user.role === 'STUDENT') {
+      const student = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { classLevel: true },
+      });
+
+      // If exam has assigned classes, check if student's class is included
+      if (exam.assignedTo && Array.isArray(exam.assignedTo) && exam.assignedTo.length > 0) {
+        // If student has no class, deny access
+        if (!student?.classLevel) {
+          return NextResponse.json({ error: 'Exam not available for your class' }, { status: 403 });
+        }
+        
+        // Check if student's class is in the assigned classes
+        const assignedClasses = exam.assignedTo as string[];
+        if (!assignedClasses.includes(student.classLevel)) {
+          return NextResponse.json({ error: 'Exam not available for your class' }, { status: 403 });
+        }
+      }
+      // If exam has no assigned classes, allow access (backward compatibility)
+    }
+
     return NextResponse.json(exam);
   } catch (error) {
     console.error('Error fetching exam:', error);

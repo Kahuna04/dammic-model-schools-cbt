@@ -12,8 +12,15 @@ export default async function StudentDashboard() {
     redirect('/login');
   }
 
-  // Fetch available exams
-  const exams = await prisma.exam.findMany({
+  // Get student's class level
+  const student = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { classLevel: true },
+  });
+
+  // Fetch all published exams first, then filter by class assignment in code
+  // (Prisma doesn't have great JSON array filtering support)
+  const allExams = await prisma.exam.findMany({
     where: {
       status: 'PUBLISHED',
       AND: [
@@ -39,6 +46,23 @@ export default async function StudentDashboard() {
     orderBy: {
       createdAt: 'desc',
     },
+  });
+
+  // Filter exams by class assignment
+  const exams = allExams.filter((exam) => {
+    // If exam has no assigned classes, show it to everyone (backward compatibility)
+    if (!exam.assignedTo || (Array.isArray(exam.assignedTo) && exam.assignedTo.length === 0)) {
+      return true;
+    }
+    
+    // If student has no class, don't show class-assigned exams
+    if (!student?.classLevel) {
+      return false;
+    }
+    
+    // Check if student's class is in the assigned classes array
+    const assignedClasses = Array.isArray(exam.assignedTo) ? exam.assignedTo : [];
+    return assignedClasses.includes(student.classLevel);
   });
 
   // Fetch student's submissions
