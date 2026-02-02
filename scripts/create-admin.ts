@@ -1,12 +1,22 @@
+import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  const email = 'admin@example.com'; // Change this
-  const password = 'admin123'; // Change this
-  const name = 'Admin User'; // Change this
+  const email = 'admin@dammicschools.com';
+  const password = 'admin123';
+  const name = 'Admin User';
+
+  const existingUser = await prisma.user.findUnique({
+    where: { email },
+  });
+
+  if (existingUser) {
+    console.log('Admin user already exists.');
+    return;
+  }
 
   // Hash the password
   const hashedPassword = await bcrypt.hash(password, 10);

@@ -2,6 +2,9 @@
 CREATE TYPE "Role" AS ENUM ('ADMIN', 'STAFF', 'STUDENT');
 
 -- CreateEnum
+CREATE TYPE "ClassLevel" AS ENUM ('JSS1', 'JSS2', 'JSS3', 'SSS1', 'SSS2', 'SSS3');
+
+-- CreateEnum
 CREATE TYPE "QuestionType" AS ENUM ('MULTIPLE_CHOICE', 'TRUE_FALSE', 'ESSAY');
 
 -- CreateEnum
@@ -13,11 +16,13 @@ CREATE TYPE "SubmissionStatus" AS ENUM ('IN_PROGRESS', 'SUBMITTED', 'GRADED');
 -- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
-    "email" TEXT NOT NULL,
+    "email" TEXT,
     "password" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "role" "Role" NOT NULL DEFAULT 'STUDENT',
     "studentId" TEXT,
+    "classLevel" "ClassLevel",
+    "permissions" JSONB,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -35,6 +40,7 @@ CREATE TABLE "Exam" (
     "status" "ExamStatus" NOT NULL DEFAULT 'DRAFT',
     "startTime" TIMESTAMP(3),
     "endTime" TIMESTAMP(3),
+    "assignedTo" JSONB,
     "createdById" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -100,6 +106,9 @@ CREATE INDEX "User_email_idx" ON "User"("email");
 
 -- CreateIndex
 CREATE INDEX "User_role_idx" ON "User"("role");
+
+-- CreateIndex
+CREATE INDEX "User_classLevel_idx" ON "User"("classLevel");
 
 -- CreateIndex
 CREATE INDEX "Exam_status_idx" ON "Exam"("status");
