@@ -35,7 +35,7 @@ export async function GET(
     }
 
     // Staff can only access their own exams
-    const whereClause: Prisma.ExamWhereInput = { id: params.id };
+    const whereClause: Record<string, any> = { id: params.id };
     if (session.user.role === 'STAFF') {
       whereClause.createdById = session.user.id;
     }

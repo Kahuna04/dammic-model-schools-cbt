@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     const classLevel = searchParams.get('class');
 
     // Fetch students
-    const where: Prisma.UserWhereInput = { role: 'STUDENT' };
+    const where: Record<string, any> = { role: 'STUDENT' };
     if (classLevel && classLevel !== 'ALL') {
       where.classLevel = classLevel;
     }

@@ -20,7 +20,7 @@ export async function POST(
     const body = await request.json();
     const { assignedTo, status, startTime, endTime } = body;
 
-    const updateData: Prisma.ExamUpdateInput = {};
+    const updateData: Record<string, any> = {};
 
     if (assignedTo !== undefined) {
       // assignedTo should be an array of class levels like ["JSS1", "JSS2"]

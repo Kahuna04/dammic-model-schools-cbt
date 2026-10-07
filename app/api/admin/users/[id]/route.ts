@@ -32,7 +32,7 @@ export async function PUT(
     const fullName = `${firstName} ${surname}`;
     
     // Prepare update data
-    const updateData: Prisma.UserUpdateInput = {
+    const updateData: Record<string, any> = {
       name: fullName,
     };
 
