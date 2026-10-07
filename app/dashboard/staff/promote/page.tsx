@@ -238,6 +238,96 @@ export default function StudentPromotionPage() {
     );
   }
 
+  const renderStudentMobileCard = (s: CandidateStudent) => {
+    const currentDecision = decisions[s.id] || 'PROMOTE';
+    const badgeColor =
+      s.stats.avgPercentage !== null
+        ? s.stats.avgPercentage >= 70
+          ? 'bg-green-100 text-green-800 border-green-300'
+          : s.stats.avgPercentage >= 40
+          ? 'bg-blue-100 text-blue-800 border-blue-300'
+          : 'bg-red-100 text-red-800 border-red-300'
+        : '';
+
+    return (
+      <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm space-y-3">
+        {/* Student Name & Admission ID */}
+        <div className="flex justify-between items-start border-b border-gray-100 pb-2.5">
+          <div>
+            <p className="font-bold text-gray-900 text-base">{s.name}</p>
+            <p className="text-xs text-gray-500">{s.email || 'No email'}</p>
+          </div>
+          {s.studentId && (
+            <span className="font-mono text-xs font-semibold bg-gray-100 px-2 py-0.5 rounded text-gray-700">
+              {s.studentId}
+            </span>
+          )}
+        </div>
+
+        {/* Exam Performance */}
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-gray-400 font-semibold uppercase text-[10px]">Performance</span>
+          {s.stats.avgPercentage !== null ? (
+            <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${badgeColor}`}>
+              {s.stats.avgPercentage}% Avg ({s.stats.passedCount}/{s.stats.totalExams} Passed)
+            </span>
+          ) : (
+            <span className="text-xs text-gray-400 font-medium">No Exams Taken</span>
+          )}
+        </div>
+
+        {/* Promotion Action Segmented Control */}
+        <div className="space-y-1.5 pt-1">
+          <span className="text-gray-400 font-semibold uppercase text-[10px] block">Promotion Decision</span>
+          <div className="grid grid-cols-2 gap-2 bg-gray-100 p-1.5 rounded-xl border border-gray-200">
+            <button
+              type="button"
+              onClick={() => handleDecisionChange(s.id, 'PROMOTE')}
+              className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                currentDecision === 'PROMOTE'
+                  ? 'bg-emerald-600 text-white shadow-md'
+                  : 'text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <span>✓</span>
+              <span>Promote</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleDecisionChange(s.id, 'REPEAT')}
+              className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                currentDecision === 'REPEAT'
+                  ? 'bg-amber-600 text-white shadow-md'
+                  : 'text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <span>🔄</span>
+              <span>Repeat</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Target Result Status */}
+        <div className="pt-2 border-t border-gray-100 flex items-center justify-between text-xs">
+          <span className="text-gray-400 font-semibold uppercase text-[10px]">Target Status:</span>
+          {currentDecision === 'REPEAT' ? (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">
+              🔄 Repeat {selectedClass}
+            </span>
+          ) : nextClass === 'GRADUATED' ? (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300">
+              🎓 GRADUATED (Alumni)
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800 border border-green-300">
+              ➔ Move to {nextClass}
+            </span>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-[#F4F1E8]">
       <DashboardHeader
@@ -363,13 +453,14 @@ export default function StudentPromotionPage() {
           </button>
         </div>
 
-        {/* Students Table */}
+        {/* Students Table (with Mobile Cards layout) */}
         <DataTable
           columns={columns}
           data={students}
           keyExtractor={(s) => s.id}
           emptyMessage={`No active students found in ${selectedClass}`}
           minWidth="min-w-[850px]"
+          renderMobileCard={renderStudentMobileCard}
         />
       </main>
 

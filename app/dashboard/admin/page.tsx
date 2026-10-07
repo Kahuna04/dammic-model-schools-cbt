@@ -10,6 +10,7 @@ import {
   StatusBadge,
   DataTable,
   Column,
+  ExamsTableWithTabs,
 } from '@/components/dashboard';
 
 import { formatDate } from '@/lib/date';
@@ -110,9 +111,9 @@ export default async function AdminDashboard() {
       <main className="container mx-auto p-6 max-w-7xl">
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <StatCard title="Total Users" value={totalUsers} icon="👥" />
-          <StatCard title="Total Exams" value={totalExams} icon="📝" />
-          <StatCard title="Total Submissions" value={totalSubmissions} icon="✅" />
+          <StatCard title="Total Users" value={totalUsers} icon="👥" href="/dashboard/admin/users" />
+          <StatCard title="Total Exams" value={totalExams} icon="📝" href="/dashboard/admin/exams" />
+          <StatCard title="Total Submissions" value={totalSubmissions} icon="✅" href="/dashboard/admin/exams" />
         </div>
 
         {/* Quick Actions */}
@@ -172,14 +173,7 @@ export default async function AdminDashboard() {
 
         {/* Exams Overview */}
         <section>
-          <h2 className="text-xl sm:text-2xl font-bold text-[#4B5320] mb-4">All Exams</h2>
-          <DataTable
-            columns={examColumns}
-            data={exams}
-            keyExtractor={(e) => e.id}
-            emptyMessage="No exams created yet"
-            minWidth="min-w-[800px]"
-          />
+          <ExamsTableWithTabs exams={exams} title="All Exams" />
         </section>
       </main>
     </div>

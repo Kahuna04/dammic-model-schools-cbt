@@ -156,55 +156,99 @@ export default async function StudentDashboard() {
             </div>
           ) : (
             <div className="bg-white rounded-lg shadow overflow-hidden">
-              <div className="overflow-x-auto">
-              <table className="w-full min-w-[600px]">
-                <thead className="bg-[#4B5320] text-white">
-                  <tr>
-                    <th className="px-4 py-3 text-left">Exam</th>
-                    <th className="px-4 py-3 text-left">Status</th>
-                    <th className="px-4 py-3 text-left">Score</th>
-                    <th className="px-4 py-3 text-left">Result</th>
-                    <th className="px-4 py-3 text-left">Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {submissions.map((submission) => (
-                    <tr key={submission.id} className="border-b hover:bg-gray-50">
-                      <td className="px-4 py-3">{submission.exam.title}</td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          submission.status === 'GRADED' ? 'bg-green-100 text-green-700' :
-                          submission.status === 'SUBMITTED' ? 'bg-blue-100 text-blue-700' :
-                          'bg-yellow-100 text-yellow-700'
-                        }`}>
-                          {submission.status}
+              {/* Mobile Cards View */}
+              <div className="block md:hidden divide-y divide-gray-100 p-3 space-y-3">
+                {submissions.map((submission) => (
+                  <div key={submission.id} className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm space-y-3">
+                    <div className="flex justify-between items-start gap-2 border-b border-gray-100 pb-2">
+                      <p className="font-semibold text-gray-900">{submission.exam.title}</p>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                        submission.status === 'GRADED' ? 'bg-green-100 text-green-700' :
+                        submission.status === 'SUBMITTED' ? 'bg-blue-100 text-blue-700' :
+                        'bg-yellow-100 text-yellow-700'
+                      }`}>
+                        {submission.status}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <span className="text-gray-400 font-semibold block uppercase text-[10px]">Score</span>
+                        <span className="font-semibold text-gray-800">
+                          {submission.totalScore !== null ? `${submission.totalScore}/${submission.exam.totalMarks}` : '-'}
                         </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        {submission.totalScore !== null ? (
-                          `${submission.totalScore}/${submission.exam.totalMarks}`
-                        ) : (
-                          '-'
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
+                      </div>
+                      <div>
+                        <span className="text-gray-400 font-semibold block uppercase text-[10px]">Result</span>
                         {submission.passed !== null ? (
-                          <span className={`font-semibold ${
-                            submission.passed ? 'text-green-600' : 'text-red-600'
-                          }`}>
+                          <span className={`font-semibold ${submission.passed ? 'text-green-600' : 'text-red-600'}`}>
                             {submission.passed ? 'PASS' : 'FAIL'}
                           </span>
                         ) : (
                           '-'
                         )}
-                      </td>
-                      <td className="px-4 py-3">
-                        {formatDate(submission.startedAt)}
-                      </td>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="text-gray-400 font-semibold block uppercase text-[10px]">Date</span>
+                        <span className="text-gray-700">
+                          {formatDate(submission.startedAt)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full min-w-[600px]">
+                  <thead className="bg-[#4B5320] text-white">
+                    <tr>
+                      <th className="px-4 py-3 text-left">Exam</th>
+                      <th className="px-4 py-3 text-left">Status</th>
+                      <th className="px-4 py-3 text-left">Score</th>
+                      <th className="px-4 py-3 text-left">Result</th>
+                      <th className="px-4 py-3 text-left">Date</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {submissions.map((submission) => (
+                      <tr key={submission.id} className="border-b hover:bg-gray-50">
+                        <td className="px-4 py-3">{submission.exam.title}</td>
+                        <td className="px-4 py-3">
+                          <span className={`px-2 py-1 rounded-full text-xs ${
+                            submission.status === 'GRADED' ? 'bg-green-100 text-green-700' :
+                            submission.status === 'SUBMITTED' ? 'bg-blue-100 text-blue-700' :
+                            'bg-yellow-100 text-yellow-700'
+                          }`}>
+                            {submission.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          {submission.totalScore !== null ? (
+                            `${submission.totalScore}/${submission.exam.totalMarks}`
+                          ) : (
+                            '-'
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {submission.passed !== null ? (
+                            <span className={`font-semibold ${
+                              submission.passed ? 'text-green-600' : 'text-red-600'
+                            }`}>
+                              {submission.passed ? 'PASS' : 'FAIL'}
+                            </span>
+                          ) : (
+                            '-'
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {formatDate(submission.startedAt)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}

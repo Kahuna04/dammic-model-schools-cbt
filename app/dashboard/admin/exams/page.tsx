@@ -208,6 +208,31 @@ export default function AdminExamsPage() {
     },
   ];
 
+  // Tab status counts calculation
+  const counts = useMemo(() => {
+    const now = new Date();
+    let published = 0;
+    let draft = 0;
+    let archived = 0;
+
+    exams.forEach((e) => {
+      if (e.status === 'DRAFT') {
+        draft++;
+      } else if (e.status === 'ARCHIVED' || (e.endTime && new Date(e.endTime) < now)) {
+        archived++;
+      } else if (e.status === 'PUBLISHED') {
+        published++;
+      }
+    });
+
+    return {
+      all: exams.length,
+      published,
+      draft,
+      archived,
+    };
+  }, [exams]);
+
   return (
     <div className="min-h-screen bg-[#F4F1E8]">
       <DashboardHeader
@@ -231,7 +256,39 @@ export default function AdminExamsPage() {
         </div>
       </DashboardHeader>
 
-      <main className="container mx-auto p-6 max-w-7xl">
+      <main className="container mx-auto p-6 max-w-7xl space-y-4">
+        {/* Status Filter Tabs with Badge Counts */}
+        <div className="flex flex-wrap gap-2 bg-white p-3 rounded-xl shadow-sm border border-gray-200">
+          {[
+            { id: 'ALL', label: 'All Exams', count: counts.all, color: 'bg-gray-100 text-gray-700' },
+            { id: 'PUBLISHED', label: 'Published / Active', count: counts.published, color: 'bg-green-100 text-green-800' },
+            { id: 'DRAFT', label: 'Drafts', count: counts.draft, color: 'bg-yellow-100 text-yellow-800' },
+            { id: 'COMPLETED', label: 'Completed / Expired', count: counts.archived, color: 'bg-gray-200 text-gray-800' },
+          ].map((tab) => {
+            const isActive = statusFilter === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setStatusFilter(tab.id)}
+                className={`px-3.5 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${
+                  isActive
+                    ? 'bg-[#4B5320] text-white shadow-md'
+                    : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
+                }`}
+              >
+                <span>{tab.label}</span>
+                <span
+                  className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                    isActive ? 'bg-white/20 text-white' : tab.color
+                  }`}
+                >
+                  {tab.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
         {/* Universal Search & Filter Bar */}
         <SearchFilterBar
           searchQuery={searchQuery}
@@ -256,7 +313,7 @@ export default function AdminExamsPage() {
           totalCount={exams.length}
         />
 
-        {/* Exams Table */}
+        {/* Exams Table (with Mobile Cards support) */}
         <DataTable
           columns={columns}
           data={filteredExams}

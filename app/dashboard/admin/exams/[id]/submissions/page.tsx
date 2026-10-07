@@ -217,7 +217,81 @@ export default function ExamSubmissionsPage() {
           </div>
         ) : (
           <div className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="overflow-x-auto">
+            {/* Mobile Card List View */}
+            <div className="block md:hidden divide-y divide-gray-100 p-3 space-y-3">
+              {filteredSubmissions.map((submission) => (
+                <div key={submission.id} className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm space-y-3">
+                  <div className="flex justify-between items-start gap-2 border-b border-gray-100 pb-2">
+                    <div>
+                      <p className="font-semibold text-gray-900">{submission.student.name}</p>
+                      {submission.student.studentId && (
+                        <p className="text-xs text-gray-500 font-mono">ID: {submission.student.studentId}</p>
+                      )}
+                      {submission.student.classLevel && (
+                        <span className="text-[11px] bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded border border-blue-200 font-semibold inline-block mt-1">
+                          {submission.student.classLevel}
+                        </span>
+                      )}
+                    </div>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                        submission.status === 'GRADED'
+                          ? 'bg-green-100 text-green-700'
+                          : submission.status === 'SUBMITTED'
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'bg-yellow-100 text-yellow-700'
+                      }`}
+                    >
+                      {submission.status}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="text-gray-400 font-semibold block uppercase text-[10px]">Score</span>
+                      <span className="font-semibold text-gray-800">
+                        {submission.totalScore !== null ? `${submission.totalScore} / ${exam.totalMarks}` : '-'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-400 font-semibold block uppercase text-[10px]">Percentage</span>
+                      <span className="font-semibold text-gray-800">
+                        {submission.percentage !== null ? `${submission.percentage.toFixed(2)}%` : '-'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-400 font-semibold block uppercase text-[10px]">Result</span>
+                      {submission.passed !== null ? (
+                        <span className={`font-semibold ${submission.passed ? 'text-green-600' : 'text-red-600'}`}>
+                          {submission.passed ? 'PASSED' : 'FAILED'}
+                        </span>
+                      ) : (
+                        '-'
+                      )}
+                    </div>
+                    <div>
+                      <span className="text-gray-400 font-semibold block uppercase text-[10px]">Submitted</span>
+                      <span className="text-gray-700">
+                        {submission.submittedAt ? new Date(submission.submittedAt).toLocaleDateString() : '-'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-gray-100 flex justify-end">
+                    <button
+                      onClick={() => handleReset(submission.id, submission.student.name)}
+                      disabled={resettingId === submission.id}
+                      className="text-red-600 hover:text-red-800 text-xs font-semibold disabled:opacity-50"
+                    >
+                      {resettingId === submission.id ? 'Resetting...' : '⚠️ Reset Exam'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full min-w-[900px]">
                 <thead className="bg-[#4B5320] text-white">
                   <tr>
