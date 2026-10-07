@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -75,11 +75,25 @@ export default function UsersManagementPage() {
     }
   }, [status, session, router]);
 
+  const fetchUsers = useCallback(async () => {
+    try {
+      const response = await fetch('/api/admin/users');
+      if (response.ok) {
+        const data = await response.json();
+        setUsers(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch users:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (session?.user.role === 'ADMIN') {
       fetchUsers();
     }
-  }, [session]);
+  }, [session, fetchUsers]);
 
   useEffect(() => {
     // Filter users
@@ -116,19 +130,7 @@ export default function UsersManagementPage() {
     }
   }, [surname, firstName]);
 
-  const fetchUsers = async () => {
-    try {
-      const response = await fetch('/api/admin/users');
-      if (response.ok) {
-        const data = await response.json();
-        setUsers(data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch users:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+
 
   const resetForm = () => {
     setFirstName('');

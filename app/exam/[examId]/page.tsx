@@ -78,6 +78,28 @@ export default function ExamPage() {
     }
   }, []);
 
+  const handleSubmit = useCallback(async () => {
+    if (!submissionId || isSubmitting) return;
+
+    setShowSubmitDialog(false);
+    setIsSubmitting(true);
+    exitFullscreen();
+    try {
+      const response = await fetch(`/api/exams/${examId}/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ submissionId, answers }),
+      });
+
+      if (!response.ok) throw new Error('Failed to submit exam');
+
+      router.push('/dashboard/student');
+    } catch (err) {
+      alert('Failed to submit exam. Please try again.');
+      setIsSubmitting(false);
+    }
+  }, [submissionId, isSubmitting, exitFullscreen, examId, answers, router]);
+
   // Monitor fullscreen changes
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -99,7 +121,7 @@ export default function ExamPage() {
 
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-  }, [exam, isSubmitting, enterFullscreen]);
+  }, [exam, isSubmitting, enterFullscreen, handleSubmit]);
 
   // Load exam and start submission
   useEffect(() => {
@@ -188,7 +210,7 @@ export default function ExamPage() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [timeRemaining, submissionId]);
+  }, [timeRemaining, submissionId, handleSubmit]);
 
   const handleAnswerChange = (questionId: string, answer: string) => {
     setAnswers((prev) => ({ ...prev, [questionId]: answer }));
@@ -196,28 +218,6 @@ export default function ExamPage() {
 
   const confirmSubmit = () => {
     setShowSubmitDialog(true);
-  };
-
-  const handleSubmit = async () => {
-    if (!submissionId || isSubmitting) return;
-
-    setShowSubmitDialog(false);
-    setIsSubmitting(true);
-    exitFullscreen();
-    try {
-      const response = await fetch(`/api/exams/${examId}/submit`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ submissionId, answers }),
-      });
-
-      if (!response.ok) throw new Error('Failed to submit exam');
-
-      router.push('/dashboard/student');
-    } catch (err) {
-      alert('Failed to submit exam. Please try again.');
-      setIsSubmitting(false);
-    }
   };
 
   const formatTime = (seconds: number) => {

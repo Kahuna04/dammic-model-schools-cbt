@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
@@ -58,13 +58,7 @@ export default function ExamPreviewPage() {
     }
   }, [status, session, router]);
 
-  useEffect(() => {
-    if (examId && (session?.user.role === 'ADMIN' || session?.user.role === 'STAFF')) {
-      fetchExam();
-    }
-  }, [examId, session]);
-
-  const fetchExam = async () => {
+  const fetchExam = useCallback(async () => {
     try {
       // Use appropriate API endpoint based on role
       const apiUrl = session?.user.role === 'STAFF' 
@@ -87,7 +81,13 @@ export default function ExamPreviewPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [examId, session?.user.role, currentQuestionIndex]);
+
+  useEffect(() => {
+    if (examId && (session?.user.role === 'ADMIN' || session?.user.role === 'STAFF')) {
+      fetchExam();
+    }
+  }, [examId, session, fetchExam]);
 
   const handleDeleteClick = (questionId: string, questionText: string) => {
     setConfirmDialog({

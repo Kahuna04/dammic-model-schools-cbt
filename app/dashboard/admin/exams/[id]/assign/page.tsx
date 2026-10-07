@@ -21,30 +21,30 @@ export default function AssignExamPage() {
   const [endTime, setEndTime] = useState('');
 
   useEffect(() => {
-    if (status === 'authenticated' && (session.user.role === 'ADMIN' || session.user.role === 'STAFF')) {
+    const fetchExam = async () => {
+      try {
+        const response = await fetch(`/api/admin/exams/${params.id}/assign`);
+        if (response.ok) {
+          const exam = await response.json();
+          setExamTitle(exam.title);
+          setExamStatus(exam.status);
+          setAssignedClasses(exam.assignedTo || []);
+          setStartTime(exam.startTime ? new Date(exam.startTime).toISOString().slice(0, 16) : '');
+          setEndTime(exam.endTime ? new Date(exam.endTime).toISOString().slice(0, 16) : '');
+        }
+      } catch (error) {
+        console.error('Failed to fetch exam:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (status === 'authenticated' && (session?.user.role === 'ADMIN' || session?.user.role === 'STAFF')) {
       fetchExam();
     } else if (status === 'unauthenticated') {
       router.push('/login');
     }
-  }, [status, session]);
-
-  const fetchExam = async () => {
-    try {
-      const response = await fetch(`/api/admin/exams/${params.id}/assign`);
-      if (response.ok) {
-        const exam = await response.json();
-        setExamTitle(exam.title);
-        setExamStatus(exam.status);
-        setAssignedClasses(exam.assignedTo || []);
-        setStartTime(exam.startTime ? new Date(exam.startTime).toISOString().slice(0, 16) : '');
-        setEndTime(exam.endTime ? new Date(exam.endTime).toISOString().slice(0, 16) : '');
-      }
-    } catch (error) {
-      console.error('Failed to fetch exam:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [status, session, router, params.id]);
 
   const handleClassToggle = (classLevel: string) => {
     setAssignedClasses(prev => {

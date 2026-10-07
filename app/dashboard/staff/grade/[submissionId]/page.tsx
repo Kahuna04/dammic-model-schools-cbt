@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
@@ -60,13 +60,7 @@ export default function GradeSubmissionPage() {
     }
   }, [status, session, router]);
 
-  useEffect(() => {
-    if (submissionId && session?.user.role === 'STAFF') {
-      fetchSubmission();
-    }
-  }, [submissionId, session]);
-
-  const fetchSubmission = async () => {
+  const fetchSubmission = useCallback(async () => {
     try {
       const response = await fetch(`/api/staff/submissions/${submissionId}`);
       if (response.ok) {
@@ -87,7 +81,13 @@ export default function GradeSubmissionPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [submissionId]);
+
+  useEffect(() => {
+    if (submissionId && session?.user.role === 'STAFF') {
+      fetchSubmission();
+    }
+  }, [submissionId, session, fetchSubmission]);
 
   const handleGradeChange = (answerId: string, marks: number) => {
     setGrades((prev) => ({ ...prev, [answerId]: marks }));

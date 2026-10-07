@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { formatDate } from '@/lib/date';
 import * as XLSX from 'xlsx';
 
 export async function GET(request: NextRequest) {
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest) {
 
     // Since we can't retrieve plain passwords from hashed ones,
     // we'll note in the export that passwords follow the pattern: surname + first initial
-    const exportData = students.map(student => {
+    const exportData = students.map((student: (typeof students)[number]) => {
       const nameParts = student.name.split(' ');
       const surname = nameParts[nameParts.length - 1];
       const firstName = nameParts[0];
@@ -51,7 +52,7 @@ export async function GET(request: NextRequest) {
         'Email': student.email || '',
         'Username': student.studentId || '',
         'Password': generatedPassword,
-        'Joined': new Date(student.createdAt).toLocaleDateString(),
+        'Joined': formatDate(student.createdAt),
       };
     });
 

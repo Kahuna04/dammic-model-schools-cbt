@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
@@ -53,13 +53,7 @@ export default function ExamSubmissionsPage() {
     }
   }, [status, session, router]);
 
-  useEffect(() => {
-    if (examId && session?.user.role === 'ADMIN') {
-      fetchSubmissions();
-    }
-  }, [examId, session]);
-
-  const fetchSubmissions = async () => {
+  const fetchSubmissions = useCallback(async () => {
     try {
       const response = await fetch(`/api/admin/exams/${examId}/submissions`);
       if (response.ok) {
@@ -72,7 +66,13 @@ export default function ExamSubmissionsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [examId]);
+
+  useEffect(() => {
+    if (examId && session?.user.role === 'ADMIN') {
+      fetchSubmissions();
+    }
+  }, [examId, session, fetchSubmissions]);
 
   const handleReset = async (submissionId: string, studentName: string) => {
     if (!confirm(`Are you sure you want to reset the exam for ${studentName}? This action cannot be undone.`)) {
