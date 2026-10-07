@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 
 export async function GET(
   request: NextRequest,
@@ -22,7 +23,7 @@ export async function GET(
         select: { permissions: true },
       });
       
-      const permissions = user?.permissions as any;
+      const permissions = user?.permissions as Record<string, any> | null;
       if (!permissions?.can_create_exam) {
         return NextResponse.json(
           { error: 'You do not have permission to view this exam' },
@@ -34,7 +35,7 @@ export async function GET(
     }
 
     // Staff can only access their own exams
-    const whereClause: any = { id: params.id };
+    const whereClause: Prisma.ExamWhereInput = { id: params.id };
     if (session.user.role === 'STAFF') {
       whereClause.createdById = session.user.id;
     }

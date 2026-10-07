@@ -74,7 +74,7 @@ export default function AdminExamsPage() {
 
   // Filtered exams logic
   const filteredExams = useMemo(() => {
-    return exams.filter((exam) => {
+    return exams.filter((exam: Exam) => {
       const now = new Date();
 
       // Status filtering

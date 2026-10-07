@@ -22,7 +22,7 @@ interface User {
   role: string;
   studentId: string | null;
   classLevel: string | null;
-  permissions: any;
+  permissions: Record<string, boolean> | null;
   createdAt: string;
 }
 

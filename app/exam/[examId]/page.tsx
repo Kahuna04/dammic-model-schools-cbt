@@ -154,7 +154,7 @@ export default function ExamPage() {
         // Load existing answers if resuming
         if (submissionData.answers && submissionData.answers.length > 0) {
           const existingAnswers: Record<string, string> = {};
-          submissionData.answers.forEach((ans: any) => {
+          submissionData.answers.forEach((ans: { questionId: string; answer: string }) => {
             existingAnswers[ans.questionId] = ans.answer;
           });
           setAnswers(existingAnswers);

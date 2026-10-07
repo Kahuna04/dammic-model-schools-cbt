@@ -45,7 +45,7 @@ export async function POST(
     let totalScore = 0;
 
     for (const [questionId, answer] of Object.entries(answers) as [string, string][]) {
-      const question = submission.exam.questions.find((q) => q.id === questionId);
+      const question = submission.exam.questions.find((q: (typeof submission.exam.questions)[number]) => q.id === questionId);
       if (!question) continue;
 
       let isCorrect: boolean | null = null;
@@ -92,7 +92,7 @@ export async function POST(
 
     // Check if there are essay questions that need grading
     const hasEssayQuestions = submission.exam.questions.some(
-      (q) => q.type === 'ESSAY'
+      (q: (typeof submission.exam.questions)[number]) => q.type === 'ESSAY'
     );
 
     // Update submission

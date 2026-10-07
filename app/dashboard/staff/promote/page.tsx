@@ -134,8 +134,8 @@ export default function StudentPromotionPage() {
   };
 
   const nextClass = PROMOTION_MAP[selectedClass];
-  const promotedCount = Object.values(decisions).filter((d) => d === 'PROMOTE').length;
-  const repeatedCount = Object.values(decisions).filter((d) => d === 'REPEAT').length;
+  const promotedCount = Object.values(decisions).filter((d: string) => d === 'PROMOTE').length;
+  const repeatedCount = Object.values(decisions).filter((d: string) => d === 'REPEAT').length;
 
   const columns: Column<CandidateStudent>[] = [
     {

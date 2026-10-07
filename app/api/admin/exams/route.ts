@@ -3,6 +3,15 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
+interface QuestionInput {
+  type: string;
+  question: string;
+  options: any;
+  correctAnswer: string;
+  marks: number;
+  order: number;
+}
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
@@ -82,7 +91,7 @@ export async function POST(request: NextRequest) {
         endTime: endTime ? new Date(endTime) : null,
         createdById: session.user.id,
         questions: {
-          create: questions.map((q: any) => ({
+          create: questions.map((q: QuestionInput) => ({
             type: q.type,
             question: q.question,
             options: q.options,

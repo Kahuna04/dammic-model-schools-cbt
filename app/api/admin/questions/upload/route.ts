@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
 
     // Create questions in database
     const createdQuestions = await Promise.all(
-      validQuestions.map((q, index) =>
+      validQuestions.map((q: any, index: number) =>
         prisma.question.create({
           data: {
             examId: exam.id,
@@ -170,7 +170,7 @@ function parseQuestions(text: string, marksPerQuestion: number): any[] {
   const questions: any[] = [];
   
   // Split by question numbers (1., 2., 3., etc.)
-  const lines = text.split('\n').map(line => line.trim());
+  const lines = text.split('\n').map((line: string) => line.trim());
   
   let currentQuestion: any = null;
   let currentOptions: string[] = [];

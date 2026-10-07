@@ -82,7 +82,7 @@ export async function DELETE(
       select: { marks: true },
     });
 
-    const newTotalMarks = remainingQuestions.reduce((sum, q) => sum + q.marks, 0);
+    const newTotalMarks = remainingQuestions.reduce((sum: number, q: (typeof remainingQuestions)[number]) => sum + q.marks, 0);
     
     // Update passing marks proportionally if we had a percentage-based calculation
     // For now, we'll keep the same passing marks if possible, or adjust proportionally
@@ -108,7 +108,7 @@ export async function DELETE(
 
     // Update order for remaining questions
     await Promise.all(
-      questionsToReorder.map((q, index) =>
+      questionsToReorder.map((q: (typeof questionsToReorder)[number], index: number) =>
         prisma.question.update({
           where: { id: q.id },
           data: { order: index + 1 },

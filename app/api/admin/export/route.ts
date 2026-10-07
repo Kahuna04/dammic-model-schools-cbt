@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { formatDate } from '@/lib/date';
+import { Prisma } from '@prisma/client';
 import * as XLSX from 'xlsx';
 
 export async function GET(request: NextRequest) {
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
     const classLevel = searchParams.get('class');
 
     // Fetch students
-    const where: any = { role: 'STUDENT' };
+    const where: Prisma.UserWhereInput = { role: 'STUDENT' };
     if (classLevel && classLevel !== 'ALL') {
       where.classLevel = classLevel;
     }

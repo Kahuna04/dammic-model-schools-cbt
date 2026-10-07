@@ -50,7 +50,7 @@ export default async function StudentDashboard() {
   });
 
   // Filter exams by class assignment
-  const exams = allExams.filter((exam) => {
+  const exams = allExams.filter((exam: (typeof allExams)[number]) => {
     // If exam has no assigned classes, show it to everyone (backward compatibility)
     if (!exam.assignedTo || (Array.isArray(exam.assignedTo) && exam.assignedTo.length === 0)) {
       return true;

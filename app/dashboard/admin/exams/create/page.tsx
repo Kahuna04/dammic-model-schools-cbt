@@ -102,7 +102,7 @@ export default function CreateExamPage() {
     setIsSubmitting(true);
 
     try {
-      const totalMarks = questions.reduce((sum, q) => sum + q.marks, 0);
+      const totalMarks = questions.reduce((sum: number, q: Question) => sum + q.marks, 0);
       const passingMarks = Math.ceil((totalMarks * passingPercentage) / 100);
 
       const response = await fetch('/api/admin/exams', {
@@ -449,12 +449,12 @@ export default function CreateExamPage() {
 
             <div className="mt-4 p-4 bg-gray-50 rounded-md">
               <p className="text-sm text-gray-700">
-                <strong>Total Marks:</strong> {questions.reduce((sum, q) => sum + q.marks, 0)}
+                <strong>Total Marks:</strong> {questions.reduce((sum: number, q: Question) => sum + q.marks, 0)}
               </p>
               <p className="text-sm text-gray-700">
                 <strong>Passing Marks:</strong>{' '}
                 {Math.ceil(
-                  (questions.reduce((sum, q) => sum + q.marks, 0) * passingPercentage) / 100
+                  (questions.reduce((sum: number, q: Question) => sum + q.marks, 0) * passingPercentage) / 100
                 )}
               </p>
             </div>

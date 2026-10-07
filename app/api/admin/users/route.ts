@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { hash } from 'bcryptjs';
 
 // GET - Fetch all users
@@ -109,7 +110,7 @@ export async function POST(request: NextRequest) {
     const fullName = `${firstName} ${surname}`;
 
     // Prepare user data
-    const userData: any = {
+    const userData: Prisma.UserCreateInput = {
       name: fullName,
       password: hashedPassword,
       role,

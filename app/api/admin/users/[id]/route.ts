@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { hash } from 'bcryptjs';
 
 // PUT - Update user
@@ -31,7 +32,7 @@ export async function PUT(
     const fullName = `${firstName} ${surname}`;
     
     // Prepare update data
-    const updateData: any = {
+    const updateData: Prisma.UserUpdateInput = {
       name: fullName,
     };
 

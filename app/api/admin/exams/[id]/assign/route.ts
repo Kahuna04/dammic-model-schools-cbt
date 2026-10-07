@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 
 // POST - Assign exam to classes and update settings
 export async function POST(
@@ -19,7 +20,7 @@ export async function POST(
     const body = await request.json();
     const { assignedTo, status, startTime, endTime } = body;
 
-    const updateData: any = {};
+    const updateData: Prisma.ExamUpdateInput = {};
 
     if (assignedTo !== undefined) {
       // assignedTo should be an array of class levels like ["JSS1", "JSS2"]
