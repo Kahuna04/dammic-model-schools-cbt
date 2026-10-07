@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
 import { hash } from 'bcryptjs';
 
 // GET - Fetch all users
@@ -109,21 +108,17 @@ export async function POST(request: NextRequest) {
     // Create full name
     const fullName = `${firstName} ${surname}`;
 
-    // Prepare user data
-    const userData: Prisma.UserCreateInput = {
-      name: fullName,
-      password: hashedPassword,
-      role,
-    };
-
-    if (email) userData.email = email;
-    if (admissionNumber) userData.studentId = admissionNumber;
-    if (classLevel) userData.classLevel = classLevel;
-    if (permissions && role === 'STAFF') userData.permissions = permissions;
-
     // Create user
     const user = await prisma.user.create({
-      data: userData,
+      data: {
+        name: fullName,
+        password: hashedPassword,
+        role,
+        ...(email ? { email } : {}),
+        ...(admissionNumber ? { studentId: admissionNumber } : {}),
+        ...(classLevel ? { classLevel } : {}),
+        ...(permissions && role === 'STAFF' ? { permissions } : {}),
+      },
       select: {
         id: true,
         name: true,
