@@ -32,7 +32,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'No student decisions provided for promotion' }, { status: 400 });
     }
 
-    const targetStudentIds = decisions.map((d) => d.studentId);
+    const targetStudentIds = decisions.map((d: PromotionDecision) => d.studentId);
 
     // Fetch students
     const students = await prisma.user.findMany({
@@ -51,7 +51,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'No valid student records found' }, { status: 404 });
     }
 
-    const studentMap = new Map(students.map((s) => [s.id, s]));
+    const studentMap = new Map(students.map((s: (typeof students)[number]) => [s.id, s]));
     const updates: Prisma.PrismaPromise<any>[] = [];
     let promotedCount = 0;
     let repeatedCount = 0;

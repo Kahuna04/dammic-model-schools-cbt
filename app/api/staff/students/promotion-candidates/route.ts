@@ -45,11 +45,11 @@ export async function GET(request: NextRequest) {
     });
 
     // Format response with computed stats
-    const formattedStudents = students.map((student) => {
-      const validSubmissions = student.submissions.filter((s) => s.percentage !== null);
+    const formattedStudents = students.map((student: (typeof students)[number]) => {
+      const validSubmissions = student.submissions.filter((s: (typeof student.submissions)[number]) => s.percentage !== null);
       const totalExams = validSubmissions.length;
-      const passedCount = validSubmissions.filter((s) => s.passed === true).length;
-      const totalScoreSum = validSubmissions.reduce((acc, curr) => acc + (curr.percentage || 0), 0);
+      const passedCount = validSubmissions.filter((s: (typeof student.submissions)[number]) => s.passed === true).length;
+      const totalScoreSum = validSubmissions.reduce((acc: number, curr: (typeof student.submissions)[number]) => acc + (curr.percentage || 0), 0);
       const avgPercentage = totalExams > 0 ? Math.round(totalScoreSum / totalExams) : null;
 
       return {
