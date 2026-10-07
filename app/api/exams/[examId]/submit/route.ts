@@ -55,7 +55,7 @@ export async function POST(
       if (question.type === 'MULTIPLE_CHOICE' || question.type === 'TRUE_FALSE') {
         isCorrect = answer === question.correctAnswer;
         marks = isCorrect ? question.marks : 0;
-        totalScore += marks;
+        totalScore += marks ?? 0;
       }
       // Essay questions need manual grading
       else if (question.type === 'ESSAY') {
