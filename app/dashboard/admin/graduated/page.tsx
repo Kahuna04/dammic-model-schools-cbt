@@ -43,25 +43,25 @@ export default function GraduatedAlumniPage() {
   }, [status, session, router]);
 
   useEffect(() => {
+    const fetchAlumni = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/admin/graduated?search=${encodeURIComponent(search)}`);
+        if (res.ok) {
+          const data = await res.json();
+          setAlumni(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch graduated alumni:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (session) {
       fetchAlumni();
     }
   }, [session, search]);
-
-  const fetchAlumni = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/admin/graduated?search=${encodeURIComponent(search)}`);
-      if (res.ok) {
-        const data = await res.json();
-        setAlumni(data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch graduated alumni:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handlePrint = () => {
     window.print();

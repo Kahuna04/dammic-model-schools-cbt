@@ -66,57 +66,57 @@ export default function StaffDashboard() {
   }, [status, session, router]);
 
   useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const [userRes, examsRes, submissionsRes] = await Promise.all([
+          fetch('/api/staff/profile'),
+          fetch('/api/staff/exams'),
+          fetch('/api/staff/submissions/pending'),
+        ]);
+
+        let examsData: Exam[] = [];
+        let submissionsData: Submission[] = [];
+
+        if (userRes.ok) {
+          const userData: User = await userRes.json();
+          setPermissions(userData.permissions || {});
+        } else if (userRes.status === 401) {
+          router.push('/login');
+          return;
+        }
+
+        if (examsRes.ok) {
+          examsData = await examsRes.json();
+          setExams(examsData);
+        } else if (examsRes.status === 401) {
+          router.push('/login');
+          return;
+        }
+
+        if (submissionsRes.ok) {
+          submissionsData = await submissionsRes.json();
+          setPendingSubmissions(submissionsData);
+        } else if (submissionsRes.status === 401) {
+          router.push('/login');
+          return;
+        }
+
+        setStats({
+          exams: examsData.length,
+          submissions: submissionsData.length,
+          pendingGrading: submissionsData.length,
+        });
+      } catch (error) {
+        console.error('Failed to fetch dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (session?.user.role === 'STAFF') {
       fetchDashboardData();
     }
-  }, [session]);
-
-  const fetchDashboardData = async () => {
-    try {
-      const [userRes, examsRes, submissionsRes] = await Promise.all([
-        fetch('/api/staff/profile'),
-        fetch('/api/staff/exams'),
-        fetch('/api/staff/submissions/pending'),
-      ]);
-
-      let examsData: Exam[] = [];
-      let submissionsData: Submission[] = [];
-
-      if (userRes.ok) {
-        const userData: User = await userRes.json();
-        setPermissions(userData.permissions || {});
-      } else if (userRes.status === 401) {
-        router.push('/login');
-        return;
-      }
-
-      if (examsRes.ok) {
-        examsData = await examsRes.json();
-        setExams(examsData);
-      } else if (examsRes.status === 401) {
-        router.push('/login');
-        return;
-      }
-
-      if (submissionsRes.ok) {
-        submissionsData = await submissionsRes.json();
-        setPendingSubmissions(submissionsData);
-      } else if (submissionsRes.status === 401) {
-        router.push('/login');
-        return;
-      }
-
-      setStats({
-        exams: examsData.length,
-        submissions: submissionsData.length,
-        pendingGrading: submissionsData.length,
-      });
-    } catch (error) {
-      console.error('Failed to fetch dashboard data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [session, router]);
 
   if (status === 'loading' || loading) {
     return (
