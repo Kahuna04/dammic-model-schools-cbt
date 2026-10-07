@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
     const fullName = `${firstName} ${surname}`;
 
     // Prepare user data
-    const userData: Record<string, any> = {
+    const userData: Prisma.UserCreateInput = {
       name: fullName,
       password: hashedPassword,
       role,
