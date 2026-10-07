@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { formatDateTime } from '@/lib/date';
 import * as XLSX from 'xlsx';
 
 export async function GET(
@@ -48,8 +49,8 @@ export async function GET(
       return NextResponse.json({ error: 'Exam not found' }, { status: 404 });
     }
 
-    // Prepare export data
-    const exportData = exam.submissions.map(submission => ({
+    // Prepare export data with explicit typing
+    const exportData = exam.submissions.map((submission: (typeof exam.submissions)[number]) => ({
       'Name': submission.student.name,
       'Admission Number': submission.student.studentId || '-',
       'Class': submission.student.classLevel || '-',
@@ -59,7 +60,7 @@ export async function GET(
       'Total Marks': exam.totalMarks,
       'Percentage': submission.percentage !== null ? `${submission.percentage.toFixed(2)}%` : '-',
       'Passed': submission.passed !== null ? (submission.passed ? 'Yes' : 'No') : '-',
-      'Submitted At': submission.submittedAt ? new Date(submission.submittedAt).toLocaleString() : '-',
+      'Submitted At': formatDateTime(submission.submittedAt),
     }));
 
     // Create workbook
@@ -68,9 +69,9 @@ export async function GET(
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Results');
 
     // Add summary sheet
-    const passed = exam.submissions.filter(s => s.passed === true).length;
-    const failed = exam.submissions.filter(s => s.passed === false).length;
-    const notGraded = exam.submissions.filter(s => s.passed === null).length;
+    const passed = exam.submissions.filter((s: (typeof exam.submissions)[number]) => s.passed === true).length;
+    const failed = exam.submissions.filter((s: (typeof exam.submissions)[number]) => s.passed === false).length;
+    const notGraded = exam.submissions.filter((s: (typeof exam.submissions)[number]) => s.passed === null).length;
     
     const summaryData = [
       { 'Metric': 'Exam Title', 'Value': exam.title },
