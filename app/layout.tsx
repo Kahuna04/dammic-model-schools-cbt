@@ -3,6 +3,7 @@ import "./globals.css";
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import MainContentWrapper from "@/components/MainContentWrapper";
 import JsonLd from "./JsonLd";
 import Providers from "./providers";
 
@@ -28,7 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <Providers>
           <NavBar />
-          <main className="container-responsive py-4 sm:py-6 md:py-8">{children}</main>
+          <MainContentWrapper>{children}</MainContentWrapper>
           <Footer />
           <WhatsAppButton />
         </Providers>

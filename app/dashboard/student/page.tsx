@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { signOut } from 'next-auth/react';
+import { formatDate } from '@/lib/date';
 import Link from 'next/link';
 
 export default async function StudentDashboard() {
@@ -198,7 +199,7 @@ export default async function StudentDashboard() {
                         )}
                       </td>
                       <td className="px-4 py-3">
-                        {new Date(submission.startedAt).toLocaleDateString()}
+                        {formatDate(submission.startedAt)}
                       </td>
                     </tr>
                   ))}

@@ -1,6 +1,8 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
+import { useSession } from "next-auth/react";
+import { usePathname } from "next/navigation";
 
 const nav = [
   { href: "/", label: "Home", icon: "🏠" },
@@ -28,11 +30,21 @@ const nav = [
 ];
 
 export default function NavBar() {
+  const pathname = usePathname();
+  const { data: session, status } = useSession();
   const [isOpen, setIsOpen] = useState(false);
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
 
+  const isLoginPage = pathname === '/login';
+
+  const getDashboardHref = () => {
+    if (session?.user.role === 'ADMIN') return '/dashboard/admin';
+    if (session?.user.role === 'STAFF') return '/dashboard/staff';
+    return '/dashboard/student';
+  };
+
   return (
-    <header className="bg-gradient-to-r from-white via-brand-cream/50 to-white backdrop-blur border-b-2 border-brand-green/20 shadow-md sticky top-0 z-50">
+    <header className={`bg-gradient-to-r from-white via-brand-cream/50 to-white backdrop-blur border-b-2 border-brand-green/20 shadow-md sticky top-0 z-50 ${isLoginPage ? 'lg:hidden' : ''}`}>
       <div className="container-responsive flex items-center justify-between py-4">
         <Link href="/" className="flex items-center gap-1.5 sm:gap-2 text-base sm:text-xl font-bold text-brand-dark hover:text-brand-green transition">
           <span className="text-xl sm:text-2xl">🎓</span>
@@ -77,9 +89,19 @@ export default function NavBar() {
         </nav>
 
         <div className="flex items-center gap-2 sm:gap-3">
-          <Link href="/login" className="btn-outline text-xs sm:text-sm px-3 sm:px-4 py-2 sm:py-2.5">
-            <span className="hidden xs:inline">🔐 </span>Login
-          </Link>
+          {status === 'authenticated' ? (
+            <Link
+              href={getDashboardHref()}
+              className="bg-[#4B5320] text-white hover:bg-[#3b4219] transition-all text-xs sm:text-sm px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-semibold flex items-center gap-1.5 shadow-sm"
+            >
+              <span>📊</span> Dashboard
+            </Link>
+          ) : !isLoginPage ? (
+            <Link href="/login" className="btn-outline text-xs sm:text-sm px-3 sm:px-4 py-2 sm:py-2.5">
+              <span className="hidden xs:inline">🔐 </span>Login
+            </Link>
+          ) : null}
+
           <Link href="/admissions" className="btn-primary text-xs sm:text-sm px-3 sm:px-6 py-2 sm:py-3">
             <span className="hidden xs:inline">📝 </span>Apply
           </Link>

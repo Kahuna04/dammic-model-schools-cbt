@@ -108,9 +108,9 @@ export default function Page() {
         <Section title="Latest News" intro="Updates from our community (sample content)">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
           {[
-            { id: 1, img: "https://images.unsplash.com/photo-1427504494785?w=600&h=400" },
-            { id: 2, img: "https://images.unsplash.com/photo-1523050854058?w=600&h=400" },
-            { id: 3, img: "https://images.unsplash.com/photo-1524178232363?w=600&h=400" },
+            { id: 1, img: "https://images.unsplash.com/photo-1577896851231-70ef18881754?w=600&h=400" },
+            { id: 2, img: "https://images.unsplash.com/photo-1509062522246-3755977927d7?w=600&h=400" },
+            { id: 3, img: "https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=600&h=400" },
           ].map((item, i) => (
             <ScrollReveal key={item.id} animation="fade-up" delay={i * 100}>
               <article className="card-hover rounded-2xl border border-brand-green/10 bg-white overflow-hidden shadow-lg group">

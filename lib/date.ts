@@ -1,0 +1,21 @@
+export function formatDate(dateInput: Date | string | null | undefined): string {
+  if (!dateInput) return '-';
+  const date = new Date(dateInput);
+  if (isNaN(date.getTime())) return '-';
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+export function formatDateTime(dateInput: Date | string | null | undefined): string {
+  if (!dateInput) return '-';
+  const date = new Date(dateInput);
+  if (isNaN(date.getTime())) return '-';
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  const hh = String(date.getHours()).padStart(2, '0');
+  const min = String(date.getMinutes()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
+}

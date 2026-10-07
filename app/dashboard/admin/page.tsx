@@ -3,6 +3,32 @@ import { redirect } from 'next/navigation';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
+import {
+  DashboardHeader,
+  StatCard,
+  QuickActionCard,
+  StatusBadge,
+  DataTable,
+  Column,
+} from '@/components/dashboard';
+
+import { formatDate } from '@/lib/date';
+
+interface RecentUser {
+  id: string;
+  name: string;
+  email: string | null;
+  role: string;
+  createdAt: Date;
+}
+
+interface ExamOverview {
+  id: string;
+  title: string;
+  status: string;
+  createdBy: { name: string };
+  _count: { questions: number; submissions: number };
+}
 
 export default async function AdminDashboard() {
   const session = await getServerSession(authOptions);
@@ -12,7 +38,7 @@ export default async function AdminDashboard() {
   }
 
   // Fetch statistics
-  const [totalUsers, totalExams, totalSubmissions, recentUsers] = await Promise.all([
+  const [totalUsers, totalExams, totalSubmissions, recentUsers, exams] = await Promise.all([
     prisma.user.count(),
     prisma.exam.count(),
     prisma.submission.count({ where: { status: 'SUBMITTED' } }),
@@ -27,234 +53,136 @@ export default async function AdminDashboard() {
         createdAt: true,
       },
     }),
+    prisma.exam.findMany({
+      include: {
+        createdBy: {
+          select: { name: true },
+        },
+        _count: {
+          select: { questions: true, submissions: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    }),
   ]);
 
-  const exams = await prisma.exam.findMany({
-    include: {
-      createdBy: {
-        select: { name: true },
-      },
-      _count: {
-        select: { questions: true, submissions: true },
-      },
+  const userColumns: Column<RecentUser>[] = [
+    { header: 'Name', accessor: (u) => <span className="font-medium">{u.name}</span> },
+    { header: 'Email', accessor: (u) => u.email || '-' },
+    { header: 'Role', accessor: (u) => <StatusBadge status={u.role} /> },
+    { header: 'Joined', accessor: (u) => formatDate(u.createdAt) },
+  ];
+
+  const examColumns: Column<ExamOverview>[] = [
+    { header: 'Title', accessor: (e) => <span className="font-medium">{e.title}</span> },
+    { header: 'Status', accessor: (e) => <StatusBadge status={e.status} /> },
+    { header: 'Questions', accessor: (e) => e._count.questions },
+    { header: 'Submissions', accessor: (e) => e._count.submissions },
+    { header: 'Created By', accessor: (e) => e.createdBy.name },
+    {
+      header: 'Actions',
+      accessor: (e) => (
+        <div className="flex gap-2 flex-wrap text-sm">
+          <Link href={`/dashboard/admin/exams/${e.id}/preview`} className="text-purple-600 hover:underline">
+            Preview
+          </Link>
+          <Link href={`/dashboard/admin/exams/${e.id}`} className="text-[#4B5320] hover:underline">
+            View
+          </Link>
+          <Link href={`/dashboard/admin/exams/${e.id}/assign`} className="text-blue-600 hover:underline">
+            Assign
+          </Link>
+          <Link href={`/dashboard/admin/exams/${e.id}/submissions`} className="text-orange-600 hover:underline">
+            Submissions
+          </Link>
+          <a href={`/api/admin/exams/${e.id}/results`} className="text-green-600 hover:underline" download>
+            Results
+          </a>
+        </div>
+      ),
     },
-    orderBy: { createdAt: 'desc' },
-  });
+  ];
 
   return (
     <div className="min-h-screen bg-[#F4F1E8]">
-      {/* Header */}
-      <header className="bg-[#4B5320] text-white p-4 shadow-md">
-        <div className="container mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold">Admin Dashboard</h1>
-            <p className="text-xs sm:text-sm opacity-90">Welcome, {session.user.name}</p>
-          </div>
-          <Link
-            href="/api/auth/signout"
-            className="bg-white text-[#4B5320] px-4 py-2 rounded-md hover:bg-gray-100 transition-colors text-sm"
-          >
-            Logout
-          </Link>
-        </div>
-      </header>
+      <DashboardHeader title="Admin Dashboard" subtitle={`Welcome, ${session.user.name}`} />
 
       <main className="container mx-auto p-6 max-w-7xl">
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-500 text-sm">Total Users</p>
-                <p className="text-3xl font-bold text-[#4B5320]">{totalUsers}</p>
-              </div>
-              <div className="text-4xl">👥</div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-500 text-sm">Total Exams</p>
-                <p className="text-3xl font-bold text-[#4B5320]">{totalExams}</p>
-              </div>
-              <div className="text-4xl">📝</div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-500 text-sm">Total Submissions</p>
-                <p className="text-3xl font-bold text-[#4B5320]">{totalSubmissions}</p>
-              </div>
-              <div className="text-4xl">✅</div>
-            </div>
-          </div>
+          <StatCard title="Total Users" value={totalUsers} icon="👥" />
+          <StatCard title="Total Exams" value={totalExams} icon="📝" />
+          <StatCard title="Total Submissions" value={totalSubmissions} icon="✅" />
         </div>
 
         {/* Quick Actions */}
         <div className="mb-8">
           <h2 className="text-xl sm:text-2xl font-bold text-[#4B5320] mb-4">Quick Actions</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Link
+            <QuickActionCard
               href="/dashboard/admin/users"
-              className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow text-center"
-            >
-              <div className="text-4xl mb-2">👤</div>
-              <h3 className="font-semibold text-[#4B5320]">Manage Users</h3>
-              <p className="text-sm text-gray-600">Add, edit, or remove users</p>
-            </Link>
-
-            <Link
+              icon="👤"
+              title="Manage Users"
+              description="Add, edit, or remove users"
+            />
+            <QuickActionCard
               href="/dashboard/admin/upload-questions"
-              className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow text-center"
-            >
-              <div className="text-4xl mb-2">📄</div>
-              <h3 className="font-semibold text-[#4B5320]">Upload Questions</h3>
-              <p className="text-sm text-gray-600">Import from Word document</p>
-            </Link>
-
-            <Link
+              icon="📄"
+              title="Upload Questions"
+              description="Import from Word document"
+            />
+            <QuickActionCard
               href="/dashboard/admin/exams/create"
-              className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow text-center"
-            >
-              <div className="text-4xl mb-2">➕</div>
-              <h3 className="font-semibold text-[#4B5320]">Create Exam</h3>
-              <p className="text-sm text-gray-600">Create a new exam</p>
-            </Link>
-
-            <Link
+              icon="➕"
+              title="Create Exam"
+              description="Create a new exam"
+            />
+            <QuickActionCard
               href="/dashboard/admin/exams"
-              className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow text-center"
-            >
-              <div className="text-4xl mb-2">📋</div>
-              <h3 className="font-semibold text-[#4B5320]">View All Exams</h3>
-              <p className="text-sm text-gray-600">Manage and view exams</p>
-            </Link>
+              icon="📋"
+              title="View All Exams"
+              description="Manage and view exams"
+            />
+            <QuickActionCard
+              href="/dashboard/staff/promote"
+              icon="🚀"
+              title="Promote Students"
+              description="Advance students to next class"
+            />
+            <QuickActionCard
+              href="/dashboard/admin/graduated"
+              icon="🎓"
+              title="Graduated Alumni"
+              description="View archived SSS3 graduates"
+            />
           </div>
         </div>
 
         {/* Recent Users */}
         <section className="mb-8">
           <h2 className="text-xl sm:text-2xl font-bold text-[#4B5320] mb-4">Recent Users</h2>
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="overflow-x-auto">
-            <table className="w-full min-w-[600px]">
-              <thead className="bg-[#4B5320] text-white">
-                <tr>
-                  <th className="px-4 py-3 text-left">Name</th>
-                  <th className="px-4 py-3 text-left">Email</th>
-                  <th className="px-4 py-3 text-left">Role</th>
-                  <th className="px-4 py-3 text-left">Joined</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentUsers.map((user) => (
-                  <tr key={user.id} className="border-b hover:bg-gray-50">
-                    <td className="px-4 py-3">{user.name}</td>
-                    <td className="px-4 py-3">{user.email}</td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-1 rounded-full text-xs ${
-                        user.role === 'ADMIN' ? 'bg-red-100 text-red-700' :
-                        user.role === 'STAFF' ? 'bg-blue-100 text-blue-700' :
-                        'bg-green-100 text-green-700'
-                      }`}>
-                        {user.role}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      {new Date(user.createdAt).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            </div>
-          </div>
+          <DataTable
+            columns={userColumns}
+            data={recentUsers}
+            keyExtractor={(u) => u.id}
+            emptyMessage="No users registered yet"
+            minWidth="min-w-[600px]"
+          />
         </section>
 
         {/* Exams Overview */}
         <section>
           <h2 className="text-xl sm:text-2xl font-bold text-[#4B5320] mb-4">All Exams</h2>
-          {exams.length === 0 ? (
-            <div className="bg-white p-8 rounded-lg shadow text-center text-gray-500">
-              No exams created yet
-            </div>
-          ) : (
-            <div className="bg-white rounded-lg shadow overflow-hidden">
-              <div className="overflow-x-auto">
-              <table className="w-full min-w-[800px]">
-                <thead className="bg-[#4B5320] text-white">
-                  <tr>
-                    <th className="px-4 py-3 text-left">Title</th>
-                    <th className="px-4 py-3 text-left">Status</th>
-                    <th className="px-4 py-3 text-left">Questions</th>
-                    <th className="px-4 py-3 text-left">Submissions</th>
-                    <th className="px-4 py-3 text-left">Created By</th>
-                    <th className="px-4 py-3 text-left">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {exams.map((exam) => (
-                    <tr key={exam.id} className="border-b hover:bg-gray-50">
-                      <td className="px-4 py-3 font-medium">{exam.title}</td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          exam.status === 'PUBLISHED' ? 'bg-green-100 text-green-700' :
-                          exam.status === 'DRAFT' ? 'bg-yellow-100 text-yellow-700' :
-                          'bg-gray-100 text-gray-700'
-                        }`}>
-                          {exam.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">{exam._count.questions}</td>
-                      <td className="px-4 py-3">{exam._count.submissions}</td>
-                      <td className="px-4 py-3">{exam.createdBy.name}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex gap-2 flex-wrap">
-                          <Link
-                            href={`/dashboard/admin/exams/${exam.id}/preview`}
-                            className="text-purple-600 hover:underline text-sm"
-                          >
-                            Preview
-                          </Link>
-                          <Link
-                            href={`/dashboard/admin/exams/${exam.id}`}
-                            className="text-[#4B5320] hover:underline text-sm"
-                          >
-                            View
-                          </Link>
-                          <Link
-                            href={`/dashboard/admin/exams/${exam.id}/assign`}
-                            className="text-blue-600 hover:underline text-sm"
-                          >
-                            Assign
-                          </Link>
-                          <Link
-                            href={`/dashboard/admin/exams/${exam.id}/submissions`}
-                            className="text-orange-600 hover:underline text-sm"
-                          >
-                            Submissions
-                          </Link>
-                          <a
-                            href={`/api/admin/exams/${exam.id}/results`}
-                            className="text-green-600 hover:underline text-sm"
-                            download
-                          >
-                            Results
-                          </a>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              </div>
-            </div>
-          )}
+          <DataTable
+            columns={examColumns}
+            data={exams}
+            keyExtractor={(e) => e.id}
+            emptyMessage="No exams created yet"
+            minWidth="min-w-[800px]"
+          />
         </section>
       </main>
     </div>
   );
 }
+

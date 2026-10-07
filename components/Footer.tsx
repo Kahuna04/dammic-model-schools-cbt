@@ -1,6 +1,16 @@
+'use client';
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export default function Footer() {
+  const pathname = usePathname();
+
+  // Hide footer on login page and dashboard routes
+  if (pathname === '/login' || pathname?.startsWith('/dashboard')) {
+    return null;
+  }
+
   return (
     <footer className="mt-12 sm:mt-14 md:mt-16 border-t-4 border-brand-green bg-gradient-to-br from-brand-dark via-brand-green to-brand-light text-white shadow-2xl">
       <div className="container-responsive py-8 sm:py-10 md:py-12 grid gap-6 sm:gap-7 md:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">

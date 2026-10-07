@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { client } from "@/lib/sanity/client";
-import { groq } from "next-sanity";
+import groq from "groq";
 import PortableText from "@/components/PortableText";
 import { urlFor } from "@/lib/sanity/image";
 import Link from "next/link";

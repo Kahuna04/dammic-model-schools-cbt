@@ -66,7 +66,7 @@ export default function Page() {
               </iframe>
             </div>
             <p className="text-xs text-gray-600 mt-4">
-              💡 Tip: Responses are automatically saved to our Google Sheets. You'll receive a confirmation email after submission.
+              💡 Tip: Responses are automatically saved to our Google Sheets. You&apos;ll receive a confirmation email after submission.
             </p>
           </div>
         ) : (
@@ -81,7 +81,7 @@ export default function Page() {
             <div className="mt-6 p-4 bg-brand-cream/30 rounded-lg">
               <h4 className="font-semibold text-brand-dark mb-2">📄 Required Documents:</h4>
               <ul className="text-sm space-y-1 text-gray-700">
-                <li>✓ Child's birth certificate</li>
+                <li>✓ Child&apos;s birth certificate</li>
                 <li>✓ Last school report (if applicable)</li>
                 <li>✓ 2 passport photographs</li>
                 <li>✓ Immunization records</li>

@@ -1,8 +1,16 @@
 "use client";
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 
 export default function WhatsAppButton() {
+  const pathname = usePathname();
   const [isHovered, setIsHovered] = useState(false);
+
+  // Hide WhatsApp button on login page and dashboard routes
+  if (pathname === '/login' || pathname?.startsWith('/dashboard')) {
+    return null;
+  }
+
   const phoneNumber = "2348134897661"; // Nigeria format without +
   const message = "Hello! I'm interested in learning more about Dammic Model Schools.";
   const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;

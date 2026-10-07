@@ -259,7 +259,7 @@ export default function GradeSubmissionPage() {
                 <div className="space-y-2">
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm text-gray-600 mb-1">Student's Answer:</p>
+                      <p className="text-sm text-gray-600 mb-1">Student&apos;s Answer:</p>
                       <p className={`font-semibold ${answer.isCorrect ? 'text-green-600' : 'text-red-600'}`}>
                         {answer.answer || 'Not answered'}
                       </p>
@@ -292,7 +292,7 @@ export default function GradeSubmissionPage() {
               {answer.question.type === 'ESSAY' && (
                 <div className="space-y-4">
                   <div>
-                    <p className="text-sm text-gray-600 mb-2">Student's Answer:</p>
+                    <p className="text-sm text-gray-600 mb-2">Student&apos;s Answer:</p>
                     <div className="p-4 bg-gray-50 border border-gray-300 rounded-lg">
                       <p className="whitespace-pre-wrap">{answer.answer || 'Not answered'}</p>
                     </div>

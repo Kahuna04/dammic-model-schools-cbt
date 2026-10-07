@@ -5,6 +5,15 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import {
+  DashboardHeader,
+  SearchFilterBar,
+  StatusBadge,
+  DataTable,
+  Column,
+} from '@/components/dashboard';
+
+import { formatDate } from '@/lib/date';
 
 interface User {
   id: string;
@@ -285,9 +294,15 @@ export default function UsersManagementPage() {
     }
   };
 
+  const handleClearFilters = () => {
+    setSearchQuery('');
+    setFilterRole('ALL');
+    setFilterClass('ALL');
+  };
+
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-[#F4F1E8]">
         <div className="text-xl text-[#4B5320]">Loading...</div>
       </div>
     );
@@ -297,81 +312,81 @@ export default function UsersManagementPage() {
     return null;
   }
 
+  const userColumns: Column<User>[] = [
+    { header: 'Name', accessor: (u) => <span className="font-medium">{u.name}</span> },
+    { header: 'Email', accessor: (u) => u.email || '-' },
+    { header: 'Role', accessor: (u) => <StatusBadge status={u.role} /> },
+    { header: 'Class', accessor: (u) => u.classLevel || '-' },
+    { header: 'Admission No.', accessor: (u) => u.studentId || '-' },
+    { header: 'Joined', accessor: (u) => formatDate(u.createdAt) },
+    {
+      header: 'Actions',
+      accessor: (u) => (
+        <div className="flex gap-2">
+          <button
+            onClick={() => handleEdit(u)}
+            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+          >
+            Edit
+          </button>
+          {u.role !== 'ADMIN' && (
+            <button
+              onClick={() => handleDelete(u.id, u.name)}
+              className="text-red-600 hover:text-red-800 text-sm font-medium"
+            >
+              Delete
+            </button>
+          )}
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-[#F4F1E8]">
-      <header className="bg-[#4B5320] text-white p-4 shadow-md">
-        <div className="container mx-auto">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-3 sm:mb-0">
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold">Manage Users</h1>
-              <p className="text-xs sm:text-sm opacity-90">{filteredUsers.length} users displayed</p>
-            </div>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-2 mt-3">
-            <button
-              onClick={() => { resetForm(); setShowAddForm(!showAddForm); }}
-              className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors text-sm w-full sm:w-auto"
-            >
-              {showAddForm ? 'Cancel' : editingUser ? 'Cancel Edit' : 'Add User'}
-            </button>
-            <button
-              onClick={handleExport}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm w-full sm:w-auto"
-            >
-              Export to Excel
-            </button>
-            <Link
-              href="/dashboard/admin"
-              className="bg-white text-[#4B5320] px-4 py-2 rounded-md hover:bg-gray-100 transition-colors text-sm text-center w-full sm:w-auto"
-            >
-              Back to Dashboard
-            </Link>
-          </div>
-        </div>
-      </header>
+      <DashboardHeader
+        title="Manage Users"
+        subtitle={`${filteredUsers.length} of ${users.length} users displayed`}
+        showLogout={false}
+      >
+        <button
+          onClick={() => {
+            resetForm();
+            setShowAddForm(!showAddForm);
+          }}
+          className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors text-sm font-medium"
+        >
+          {showAddForm ? 'Cancel' : editingUser ? 'Cancel Edit' : 'Add User'}
+        </button>
+        <button
+          onClick={handleExport}
+          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm font-medium"
+        >
+          Export to Excel
+        </button>
+        <Link
+          href="/dashboard/admin"
+          className="bg-white text-[#4B5320] px-4 py-2 rounded-md hover:bg-gray-100 transition-colors text-sm font-medium text-center"
+        >
+          Back to Dashboard
+        </Link>
+      </DashboardHeader>
 
       <main className="container mx-auto p-6 max-w-7xl">
         {/* Search and Filters */}
-        <div className="bg-white rounded-lg shadow p-4 mb-6">
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Search Users</label>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by name, email, or admission number..."
-              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#4B5320] focus:outline-none"
-            />
-          </div>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Role</label>
-              <select
-                value={filterRole}
-                onChange={(e) => setFilterRole(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#4B5320] focus:outline-none"
-              >
-                <option value="ALL">All Roles</option>
-                <option value="STUDENT">Students</option>
-                <option value="STAFF">Staff</option>
-                <option value="ADMIN">Admins</option>
-              </select>
-            </div>
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Class</label>
-              <select
-                value={filterClass}
-                onChange={(e) => setFilterClass(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#4B5320] focus:outline-none"
-              >
-                <option value="ALL">All Classes</option>
-                {CLASS_LEVELS.map(cls => (
-                  <option key={cls} value={cls}>{cls}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
+        <SearchFilterBar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search by name, email, or admission number..."
+          roleFilter={filterRole}
+          onRoleChange={setFilterRole}
+          classFilter={filterClass}
+          onClassChange={setFilterClass}
+          classOptions={CLASS_LEVELS}
+          onClearFilters={handleClearFilters}
+          resultsCount={filteredUsers.length}
+          totalCount={users.length}
+        />
 
         {/* Add/Edit User Form */}
         {showAddForm && (
@@ -545,75 +560,13 @@ export default function UsersManagementPage() {
         )}
 
         {/* Users List */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[800px]">
-              <thead className="bg-[#4B5320] text-white">
-                <tr>
-                  <th className="px-4 py-3 text-left">Name</th>
-                  <th className="px-4 py-3 text-left">Email</th>
-                  <th className="px-4 py-3 text-left">Role</th>
-                  <th className="px-4 py-3 text-left">Class</th>
-                  <th className="px-4 py-3 text-left">Admission No.</th>
-                  <th className="px-4 py-3 text-left">Joined</th>
-                  <th className="px-4 py-3 text-left">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredUsers.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
-                      No users found
-                    </td>
-                  </tr>
-                ) : (
-                  filteredUsers.map((user) => (
-                    <tr key={user.id} className="border-b hover:bg-gray-50">
-                      <td className="px-4 py-3 font-medium">{user.name}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{user.email || '-'}</td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                            user.role === 'ADMIN'
-                              ? 'bg-red-100 text-red-700'
-                              : user.role === 'STAFF'
-                              ? 'bg-blue-100 text-blue-700'
-                              : 'bg-green-100 text-green-700'
-                          }`}
-                        >
-                          {user.role}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm">{user.classLevel || '-'}</td>
-                      <td className="px-4 py-3 text-sm">{user.studentId || '-'}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">
-                        {new Date(user.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleEdit(user)}
-                            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                          >
-                            Edit
-                          </button>
-                          {user.role !== 'ADMIN' && (
-                            <button
-                              onClick={() => handleDelete(user.id, user.name)}
-                              className="text-red-600 hover:text-red-800 text-sm font-medium"
-                            >
-                              Delete
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <DataTable
+          columns={userColumns}
+          data={filteredUsers}
+          keyExtractor={(u) => u.id}
+          emptyMessage="No users found"
+          minWidth="min-w-[800px]"
+        />
       </main>
 
       {/* Confirmation Dialog */}
@@ -629,3 +582,4 @@ export default function UsersManagementPage() {
     </div>
   );
 }
+
