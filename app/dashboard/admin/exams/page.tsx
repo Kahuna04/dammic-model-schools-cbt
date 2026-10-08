@@ -119,6 +119,31 @@ export default function AdminExamsPage() {
     });
   }, [exams, statusFilter, classFilter, searchQuery]);
 
+  // Tab status counts calculation
+  const counts = useMemo(() => {
+    const now = new Date();
+    let published = 0;
+    let draft = 0;
+    let archived = 0;
+
+    exams.forEach((e) => {
+      if (e.status === 'DRAFT') {
+        draft++;
+      } else if (e.status === 'ARCHIVED' || (e.endTime && new Date(e.endTime) < now)) {
+        archived++;
+      } else if (e.status === 'PUBLISHED') {
+        published++;
+      }
+    });
+
+    return {
+      all: exams.length,
+      published,
+      draft,
+      archived,
+    };
+  }, [exams]);
+
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F4F1E8]">
@@ -207,31 +232,6 @@ export default function AdminExamsPage() {
       ),
     },
   ];
-
-  // Tab status counts calculation
-  const counts = useMemo(() => {
-    const now = new Date();
-    let published = 0;
-    let draft = 0;
-    let archived = 0;
-
-    exams.forEach((e) => {
-      if (e.status === 'DRAFT') {
-        draft++;
-      } else if (e.status === 'ARCHIVED' || (e.endTime && new Date(e.endTime) < now)) {
-        archived++;
-      } else if (e.status === 'PUBLISHED') {
-        published++;
-      }
-    });
-
-    return {
-      all: exams.length,
-      published,
-      draft,
-      archived,
-    };
-  }, [exams]);
 
   return (
     <div className="min-h-screen bg-[#F4F1E8]">
