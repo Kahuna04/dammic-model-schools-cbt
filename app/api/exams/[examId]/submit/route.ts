@@ -41,6 +41,14 @@ export async function POST(
       );
     }
 
+    // Verify time limit on server (duration in minutes + 2 min grace period for network latency)
+    const startTimeMs = new Date(submission.createdAt).getTime();
+    const nowMs = Date.now();
+    const maxAllowedMs = (submission.exam.duration + 2) * 60 * 1000;
+    if (nowMs - startTimeMs > maxAllowedMs) {
+      console.warn(`[Security Alert] Submission ${submissionId} submitted past duration limit.`);
+    }
+
     // Save answers and calculate score
     let totalScore = 0;
 

@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
+import { authorizeUser } from '@/lib/auth-guards';
 
 export async function GET(
   request: NextRequest,
@@ -10,34 +8,17 @@ export async function GET(
 ) {
   const params = await context.params;
   try {
-    const session = await getServerSession(authOptions);
+    const auth = await authorizeUser({
+      allowedRoles: ['ADMIN', 'STAFF'],
+      requiredPermission: 'can_create_exam',
+    });
+    if (auth.response) return auth.response;
+    const sessionUser = auth.user;
 
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Allow ADMIN or STAFF with can_create_exam permission
-    if (session.user.role === 'STAFF') {
-      const user = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: { permissions: true },
-      });
-      
-      const permissions = user?.permissions as Record<string, any> | null;
-      if (!permissions?.can_create_exam) {
-        return NextResponse.json(
-          { error: 'You do not have permission to view this exam' },
-          { status: 403 }
-        );
-      }
-    } else if (session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Staff can only access their own exams
+    // Staff can only access their own exams (Object ownership check)
     const whereClause: Record<string, any> = { id: params.id };
-    if (session.user.role === 'STAFF') {
-      whereClause.createdById = session.user.id;
+    if (sessionUser.role === 'STAFF') {
+      whereClause.createdById = sessionUser.id;
     }
 
     const exam = await prisma.exam.findFirst({

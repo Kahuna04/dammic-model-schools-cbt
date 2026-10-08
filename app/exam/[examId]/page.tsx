@@ -37,6 +37,8 @@ export default function ExamPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [tabSwitchCount, setTabSwitchCount] = useState<number>(0);
+  const [lastSaved, setLastSaved] = useState<string | null>(null);
 
   // Redirect if unauthenticated
   useEffect(() => {
@@ -135,6 +137,50 @@ export default function ExamPage() {
     return () => clearInterval(interval);
   }, [timeRemaining, submissionId, handleSubmit]);
 
+  // Auto-save draft answers every 30 seconds
+  useEffect(() => {
+    if (!submissionId || Object.keys(answers).length === 0 || isSubmitting) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/exams/${examId}/save-draft`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ submissionId, answers }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setLastSaved(new Date(data.savedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+        }
+      } catch (err) {
+        console.error('Draft save error:', err);
+      }
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [submissionId, examId, answers, isSubmitting]);
+
+  // Tab switch & Window focus lost proctoring detector
+  useEffect(() => {
+    if (!submissionId || isSubmitting) return;
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        setTabSwitchCount((prev) => {
+          const newCount = prev + 1;
+          if (newCount >= 5) {
+            alert('⚠️ Security Alert: Maximum tab-switch limit reached (5/5). Your exam is being automatically submitted.');
+            handleSubmit();
+          }
+          return newCount;
+        });
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [submissionId, isSubmitting, handleSubmit]);
+
   const handleAnswerChange = (questionId: string, answer: string) => {
     setAnswers((prev) => ({ ...prev, [questionId]: answer }));
   };
@@ -181,7 +227,19 @@ export default function ExamPage() {
   const answeredCount = Object.keys(answers).filter((k) => answers[k]?.trim()).length;
 
   return (
-    <div className="min-h-screen bg-[#F4F1E8]">
+    <div
+      className="min-h-screen bg-[#F4F1E8] select-none"
+      onCopy={(e) => e.preventDefault()}
+      onPaste={(e) => e.preventDefault()}
+      onContextMenu={(e) => e.preventDefault()}
+    >
+      {/* Tab Switch Security Warning Banner */}
+      {tabSwitchCount > 0 && (
+        <div className="bg-amber-600 text-white text-xs font-bold px-4 py-2 text-center flex items-center justify-center gap-2 shadow-sm animate-pulse">
+          <span>⚠️ Security Warning: Tab switch detected ({tabSwitchCount}/5). Switching tabs 5 times will automatically submit your exam.</span>
+        </div>
+      )}
+
       {/* Sticky Exam Header */}
       <ExamHeader
         title={exam.title}
@@ -212,6 +270,12 @@ export default function ExamPage() {
           >
             ← Previous
           </button>
+
+          {lastSaved && (
+            <span className="text-[11px] text-gray-500 font-medium">
+              Saved at {lastSaved}
+            </span>
+          )}
 
           {currentQuestionIndex < exam.questions.length - 1 ? (
             <button

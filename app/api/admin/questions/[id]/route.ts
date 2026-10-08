@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { authorizeUser } from '@/lib/auth-guards';
 
 export async function DELETE(
   request: NextRequest,
@@ -9,29 +8,12 @@ export async function DELETE(
 ) {
   const params = await context.params;
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Check if user is ADMIN or STAFF with exam creation permission
-    if (session.user.role === 'STAFF') {
-      const user = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: { permissions: true },
-      });
-      
-      const permissions = user?.permissions as any;
-      if (!permissions?.can_create_exam) {
-        return NextResponse.json(
-          { error: 'You do not have permission to delete questions' },
-          { status: 403 }
-        );
-      }
-    } else if (session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await authorizeUser({
+      allowedRoles: ['ADMIN', 'STAFF'],
+      requiredPermission: 'can_create_exam',
+    });
+    if (auth.response) return auth.response;
+    const sessionUser = auth.user;
 
     // Find the question with its exam to get the marks
     const question = await prisma.question.findUnique({
@@ -53,22 +35,21 @@ export async function DELETE(
       return NextResponse.json({ error: 'Question not found' }, { status: 404 });
     }
 
-    // Staff can only delete questions from exams they created
-    if (session.user.role === 'STAFF' && question.exam.createdById !== session.user.id) {
+    // Staff can only delete questions from exams they created (Object ownership check)
+    if (sessionUser.role === 'STAFF' && question.exam.createdById !== sessionUser.id) {
       return NextResponse.json(
         { error: 'You can only delete questions from exams you created' },
         { status: 403 }
       );
     }
 
-    // Check if exam has submissions - warn if it does
+    // Check if exam has submissions
     const submissionCount = await prisma.submission.count({
       where: { examId: question.examId },
     });
 
     if (submissionCount > 0) {
       // Still allow deletion but warn that it may affect existing submissions
-      // The cascade delete will remove all answers for this question
     }
 
     // Delete the question (cascade will delete all answers for this question)
@@ -84,8 +65,6 @@ export async function DELETE(
 
     const newTotalMarks = remainingQuestions.reduce((sum: number, q: (typeof remainingQuestions)[number]) => sum + q.marks, 0);
     
-    // Update passing marks proportionally if we had a percentage-based calculation
-    // For now, we'll keep the same passing marks if possible, or adjust proportionally
     const oldTotalMarks = question.exam.totalMarks;
     const newPassingMarks = oldTotalMarks > 0 
       ? Math.ceil((question.exam.passingMarks / oldTotalMarks) * newTotalMarks)
@@ -132,4 +111,3 @@ export async function DELETE(
     );
   }
 }
-

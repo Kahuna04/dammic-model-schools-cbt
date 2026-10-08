@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { authorizeUser } from '@/lib/auth-guards';
 
 interface QuestionInput {
   type: string;
@@ -14,11 +13,8 @@ interface QuestionInput {
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await authorizeUser({ allowedRoles: ['ADMIN', 'STAFF'] });
+    if (auth.response) return auth.response;
 
     const exams = await prisma.exam.findMany({
       include: {
@@ -41,29 +37,12 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Check if user is ADMIN or STAFF with exam creation permission
-    if (session.user.role === 'STAFF') {
-      const user = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: { permissions: true },
-      });
-      
-      const permissions = user?.permissions as any;
-      if (!permissions?.can_create_exam) {
-        return NextResponse.json(
-          { error: 'You do not have permission to create exams' },
-          { status: 403 }
-        );
-      }
-    } else if (session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await authorizeUser({
+      allowedRoles: ['ADMIN', 'STAFF'],
+      requiredPermission: 'can_create_exam',
+    });
+    if (auth.response) return auth.response;
+    const sessionUser = auth.user;
 
     const body = await request.json();
     const {
@@ -89,9 +68,9 @@ export async function POST(request: NextRequest) {
         status,
         startTime: startTime ? new Date(startTime) : null,
         endTime: endTime ? new Date(endTime) : null,
-        createdById: session.user.id,
+        createdById: sessionUser.id,
         questions: {
-          create: questions.map((q: QuestionInput) => ({
+          create: (questions || []).map((q: QuestionInput) => ({
             type: q.type,
             question: q.question,
             options: q.options,

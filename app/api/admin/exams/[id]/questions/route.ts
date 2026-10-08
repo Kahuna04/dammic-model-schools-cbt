@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { authorizeUser } from '@/lib/auth-guards';
 
 // DELETE all questions from an exam
 export async function DELETE(
@@ -10,29 +9,12 @@ export async function DELETE(
 ) {
   const params = await context.params;
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Check if user is ADMIN or STAFF with exam creation permission
-    if (session.user.role === 'STAFF') {
-      const user = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: { permissions: true },
-      });
-      
-      const permissions = user?.permissions as any;
-      if (!permissions?.can_create_exam) {
-        return NextResponse.json(
-          { error: 'You do not have permission to delete questions' },
-          { status: 403 }
-        );
-      }
-    } else if (session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await authorizeUser({
+      allowedRoles: ['ADMIN', 'STAFF'],
+      requiredPermission: 'can_create_exam',
+    });
+    if (auth.response) return auth.response;
+    const sessionUser = auth.user;
 
     // Find the exam
     const exam = await prisma.exam.findUnique({
@@ -53,17 +35,12 @@ export async function DELETE(
       return NextResponse.json({ error: 'Exam not found' }, { status: 404 });
     }
 
-    // Staff can only delete questions from exams they created
-    if (session.user.role === 'STAFF' && exam.createdById !== session.user.id) {
+    // Staff can only delete questions from exams they created (Object ownership check)
+    if (sessionUser.role === 'STAFF' && exam.createdById !== sessionUser.id) {
       return NextResponse.json(
         { error: 'You can only delete questions from exams you created' },
         { status: 403 }
       );
-    }
-
-    // Check if exam has submissions - warn that this will affect them
-    if (exam._count.submissions > 0) {
-      // Still allow deletion but note that it will affect existing submissions
     }
 
     // Delete all questions (cascade will delete all answers)
@@ -97,4 +74,3 @@ export async function DELETE(
     );
   }
 }
-

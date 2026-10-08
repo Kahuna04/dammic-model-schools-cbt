@@ -3,6 +3,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import { compare } from 'bcryptjs';
 import { prisma } from './prisma';
 import { Role } from '@prisma/client';
+import { StaffPermissions } from '@/types/permissions';
 
 export const authOptions: NextAuthOptions = {
   session: {
@@ -57,18 +58,24 @@ export const authOptions: NextAuthOptions = {
           email: user.email || '',
           name: user.name,
           role: user.role,
+          permissions: (user.permissions as StaffPermissions) || null,
         };
       },
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         return {
           ...token,
           id: user.id,
           role: user.role,
+          permissions: user.permissions || null,
         };
+      }
+      // Support session update trigger
+      if (trigger === 'update' && session?.permissions) {
+        token.permissions = session.permissions;
       }
       return token;
     },
@@ -79,6 +86,7 @@ export const authOptions: NextAuthOptions = {
           ...session.user,
           id: token.id as string,
           role: token.role as Role,
+          permissions: (token.permissions as StaffPermissions) || null,
         },
       };
     },
